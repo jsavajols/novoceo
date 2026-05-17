@@ -3,3 +3,5 @@ main
 debug
 snug/snug
 recorder/recorder
+mobile/node_modules/
+mobile/.expo/

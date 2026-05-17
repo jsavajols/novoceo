@@ -172,6 +172,19 @@ API_URL=http://localhost:5000 API_TOKEN=<token> go run ./front/
 
 Ouvrir `http://localhost:3000` dans le navigateur.
 
+## mobile — application Android
+
+Voir [docs/mobile.md](mobile.md) pour la documentation complète.
+
+```bash
+# Dev (Expo Go sur le téléphone)
+cd mobile/
+npx expo start
+
+# Build APK (EAS cloud)
+eas build --platform android --profile preview
+```
+
 ## Build de tous les binaires
 
 ```bash

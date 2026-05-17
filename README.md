@@ -32,11 +32,12 @@ graph LR
     SNUG -- "TOGGLE /set" --> MOSQ
 
     BROWSER["🌐 navigateur"] --> FRONT
+    MOBILE["📱 app mobile"] --> API
 ```
 
 **Flux principal** : Bouton (Zigbee) -> zigbee2mqtt -> MQTT -> snug -> Prise (TOGGLE)
 
-**Flux data** : Tous les events -> recorder -> PostgreSQL -> api -> front
+**Flux data** : Tous les events -> recorder -> PostgreSQL -> api -> front / mobile
 
 > Diagramme complet avec séquence dans [docs/architecture.md](docs/architecture.md)
 
@@ -49,6 +50,7 @@ graph LR
 | **recorder** | Persiste tous les events en PostgreSQL | — | 1 |
 | **api** | REST : commandes + lecture BDD | 5000 | 2 |
 | **front** | Dashboard web HTMX | 3000 | 2 |
+| **mobile** | App Android React Native / Expo | — | — |
 | **monitor** | Dashboard ANSI terminal (dev) | — | — |
 | **send-device** | CLI one-shot pour envoyer une commande | — | — |
 
@@ -61,6 +63,7 @@ graph LR
 
 - [Architecture et topologie MQTT](docs/architecture.md)
 - [API REST](docs/api.md)
+- [Application mobile Android](docs/mobile.md)
 - [Déploiement Kubernetes](docs/kubernetes.md)
 - [Développement local](docs/dev.md)
 - [Base de données](docs/database.md)
