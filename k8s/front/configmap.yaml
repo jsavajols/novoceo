@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: front-config
+  namespace: novoceo
+data:
+  API_URL: "http://api:5000"
+  FRONT_PORT: "3000"

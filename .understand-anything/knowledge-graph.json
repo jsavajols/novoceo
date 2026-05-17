@@ -1,0 +1,2275 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "novoceo",
+    "languages": [
+      "go",
+      "yaml",
+      "shell",
+      "dockerfile",
+      "markdown",
+      "sql",
+      "nix",
+      "json"
+    ],
+    "frameworks": [
+      "Fiber",
+      "Paho MQTT",
+      "pgx",
+      "godotenv",
+      "Docker",
+      "Kubernetes"
+    ],
+    "description": "Monitoring et contrôle d'appareils Zigbee via Zigbee2MQTT, MQTT et une API REST. Go 1.25 monorepo avec plusieurs services déployés sur Kubernetes k3s.",
+    "analyzedAt": "2026-05-17T11:05:17Z",
+    "gitCommitHash": "no-git"
+  },
+  "nodes": [
+    {
+      "id": "file:api/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "api/main.go",
+      "summary": "REST API service exposing Zigbee2MQTT sensor data and device control via Fiber v2, with Bearer auth, PostgreSQL (pgx pool) reads, and non-blocking MQTT publish for device commands.",
+      "tags": [
+        "entry-point",
+        "api-handler",
+        "service",
+        "middleware"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Uses method receivers on an application struct to bind handler closures to both DB pool and MQTT client — idiomatic Go microservice pattern."
+    },
+    {
+      "id": "function:api/main.go:postCommand",
+      "type": "function",
+      "name": "postCommand",
+      "filePath": "api/main.go",
+      "lineRange": [
+        48,
+        91
+      ],
+      "summary": "Handles POST /device/command — validates the request, builds the MQTT topic for local or multi-RPi topology, and publishes the state or raw JSON payload with a 3-second timeout.",
+      "tags": [
+        "api-handler",
+        "mqtt",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:api/main.go:getTemperature",
+      "type": "function",
+      "name": "getTemperature",
+      "filePath": "api/main.go",
+      "lineRange": [
+        113,
+        124
+      ],
+      "summary": "Handles GET /sensor/temperature — queries the latest temperature, humidity, and battery values from the states JSONB table and returns them as JSON.",
+      "tags": [
+        "api-handler",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:api/main.go:getTemperatureHistory",
+      "type": "function",
+      "name": "getTemperatureHistory",
+      "filePath": "api/main.go",
+      "lineRange": [
+        145,
+        164
+      ],
+      "summary": "Handles GET /sensor/temperature/history — returns 15-minute-bucketed average temperature readings for the past 24 hours.",
+      "tags": [
+        "api-handler",
+        "database",
+        "time-series"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:api/main.go:getBridgeHealth",
+      "type": "function",
+      "name": "getBridgeHealth",
+      "filePath": "api/main.go",
+      "lineRange": [
+        186,
+        199
+      ],
+      "summary": "Handles GET /bridge/health — reads the latest Zigbee2MQTT bridge health payload (load average, memory) from PostgreSQL and returns it.",
+      "tags": [
+        "api-handler",
+        "database",
+        "monitoring"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:api/main.go:getContactState",
+      "type": "function",
+      "name": "getContactState",
+      "filePath": "api/main.go",
+      "lineRange": [
+        221,
+        233
+      ],
+      "summary": "Handles GET /device/:device/contact — fetches the latest contact sensor state (open/closed) and battery level for a named device.",
+      "tags": [
+        "api-handler",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:api/main.go:getDeviceState",
+      "type": "function",
+      "name": "getDeviceState",
+      "filePath": "api/main.go",
+      "lineRange": [
+        252,
+        264
+      ],
+      "summary": "Handles GET /device/:device/state — fetches the latest on/off state for a named device from the states table.",
+      "tags": [
+        "api-handler",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:api/main.go:initDB",
+      "type": "function",
+      "name": "initDB",
+      "filePath": "api/main.go",
+      "lineRange": [
+        268,
+        287
+      ],
+      "summary": "Initialises a pgxpool connection to PostgreSQL from environment variables with a ping check before returning the pool.",
+      "tags": [
+        "service",
+        "database",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:api/main.go:initMQTT",
+      "type": "function",
+      "name": "initMQTT",
+      "filePath": "api/main.go",
+      "lineRange": [
+        289,
+        308
+      ],
+      "summary": "Creates and connects a Paho MQTT client with auto-reconnect; connection is non-blocking so the HTTP server starts immediately.",
+      "tags": [
+        "service",
+        "mqtt",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:api/main.go:bearerAuth",
+      "type": "function",
+      "name": "bearerAuth",
+      "filePath": "api/main.go",
+      "lineRange": [
+        310,
+        317
+      ],
+      "summary": "Returns a Fiber middleware that rejects requests whose Authorization header does not match the configured Bearer token.",
+      "tags": [
+        "middleware",
+        "security"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:api/Dockerfile",
+      "type": "service",
+      "name": "Dockerfile",
+      "filePath": "api/Dockerfile",
+      "summary": "Multi-stage Docker build for the API service: compiles a static Go binary on golang:1.25-alpine then runs it in a distroless/static-debian12 image exposed on port 5000.",
+      "tags": [
+        "containerization",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Uses distroless nonroot image for minimal attack surface and zero shell in production."
+    },
+    {
+      "id": "file:front/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "front/main.go",
+      "summary": "Entry point for the front-end service: wires Fiber v2 HTTP routes for HTMX partial endpoints and provides shared HTTP client helpers (get/post) that proxy requests to the API service with Bearer auth.",
+      "tags": [
+        "entry-point",
+        "service",
+        "api-handler",
+        "component"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:front/main.go:get",
+      "type": "function",
+      "name": "get",
+      "filePath": "front/main.go",
+      "lineRange": [
+        36,
+        52
+      ],
+      "summary": "Performs an authenticated GET request to the API service and JSON-decodes the response into the given output pointer.",
+      "tags": [
+        "utility",
+        "http-client"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:front/main.go:post",
+      "type": "function",
+      "name": "post",
+      "filePath": "front/main.go",
+      "lineRange": [
+        54,
+        69
+      ],
+      "summary": "Performs an authenticated POST request to the API service with a JSON body, discarding the response body.",
+      "tags": [
+        "utility",
+        "http-client"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:front/card_contact.go",
+      "type": "file",
+      "name": "card_contact.go",
+      "filePath": "front/card_contact.go",
+      "summary": "HTMX partial handler for the door contact sensor card: fetches the current contact state from the API and renders an HTML fragment showing open/closed status with a glow effect.",
+      "tags": [
+        "component",
+        "api-handler",
+        "markup"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:front/card_contact.go:htmxContact",
+      "type": "function",
+      "name": "htmxContact",
+      "filePath": "front/card_contact.go",
+      "lineRange": [
+        16,
+        57
+      ],
+      "summary": "Renders the contact sensor card HTML fragment with conditional glow classes and battery level display based on live API data.",
+      "tags": [
+        "component",
+        "api-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:front/card_health.go",
+      "type": "file",
+      "name": "card_health.go",
+      "filePath": "front/card_health.go",
+      "summary": "HTMX partial handler for the bridge health card: fetches load average and memory usage from the API and renders an inline bar chart SVG fragment.",
+      "tags": [
+        "component",
+        "api-handler",
+        "monitoring"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:front/card_health.go:htmxHealth",
+      "type": "function",
+      "name": "htmxHealth",
+      "filePath": "front/card_health.go",
+      "lineRange": [
+        18,
+        76
+      ],
+      "summary": "Fetches bridge health data and renders a load-average bar chart with a memory usage progress bar as an HTML fragment.",
+      "tags": [
+        "component",
+        "api-handler",
+        "monitoring"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:front/card_prise.go",
+      "type": "file",
+      "name": "card_prise.go",
+      "filePath": "front/card_prise.go",
+      "summary": "HTMX partial handlers for the smart plug card: renders the on/off state with a glow effect and provides a toggle button that sends a TOGGLE command through the API.",
+      "tags": [
+        "component",
+        "api-handler",
+        "event-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:front/card_prise.go:renderPrise",
+      "type": "function",
+      "name": "renderPrise",
+      "filePath": "front/card_prise.go",
+      "lineRange": [
+        16,
+        55
+      ],
+      "summary": "Fetches the plug state from the API and renders the plug card HTML fragment with appropriate glow class and a toggle HTMX button.",
+      "tags": [
+        "component",
+        "api-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:front/card_prise.go:htmxToggle",
+      "type": "function",
+      "name": "htmxToggle",
+      "filePath": "front/card_prise.go",
+      "lineRange": [
+        61,
+        65
+      ],
+      "summary": "Handles POST /htmx/toggle — posts a TOGGLE command to the API, waits 1.5 s for state propagation, then re-renders the plug card.",
+      "tags": [
+        "event-handler",
+        "api-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:front/card_temp.go",
+      "type": "file",
+      "name": "card_temp.go",
+      "filePath": "front/card_temp.go",
+      "summary": "HTMX partial handler for the temperature card: renders current temperature, humidity, battery, and a 24-hour sparkline SVG chart built from history data.",
+      "tags": [
+        "component",
+        "api-handler",
+        "data-model"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:front/card_temp.go:sparklineSVG",
+      "type": "function",
+      "name": "sparklineSVG",
+      "filePath": "front/card_temp.go",
+      "lineRange": [
+        23,
+        68
+      ],
+      "summary": "Generates an inline SVG sparkline chart (polyline + gradient fill) from a slice of temperature history points, scaling the Y axis to min/max range.",
+      "tags": [
+        "utility",
+        "component"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:front/card_temp.go:htmxTemperature",
+      "type": "function",
+      "name": "htmxTemperature",
+      "filePath": "front/card_temp.go",
+      "lineRange": [
+        70,
+        123
+      ],
+      "summary": "Handles GET /htmx/temperature — fetches current temperature and 24-hour history, then renders a full temperature card HTML fragment with sparkline.",
+      "tags": [
+        "component",
+        "api-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:front/index.go",
+      "type": "file",
+      "name": "index.go",
+      "filePath": "front/index.go",
+      "summary": "Defines the full-page HTML shell as a Go string constant, serving the NOVOCEO IoT dashboard with Tailwind CSS, HTMX auto-refresh cards for health, temperature, plug, and door sensor, plus a dark/light theme toggle.",
+      "tags": [
+        "component",
+        "markup",
+        "entry-point"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "service:front/Dockerfile",
+      "type": "service",
+      "name": "Dockerfile",
+      "filePath": "front/Dockerfile",
+      "summary": "Multi-stage Docker build for the front service: compiles a static Go binary on golang:1.25-alpine then runs it in a distroless/static-debian12 image exposed on port 3000.",
+      "tags": [
+        "containerization",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:recorder/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "recorder/main.go",
+      "summary": "MQTT subscriber service that persists every zigbee2mqtt/# message as a JSONB row in PostgreSQL — normalising non-JSON payloads and using quadratic retry backoff for DB connection.",
+      "tags": [
+        "entry-point",
+        "service",
+        "data-pipeline",
+        "event-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:recorder/main.go:initDB",
+      "type": "function",
+      "name": "initDB",
+      "filePath": "recorder/main.go",
+      "lineRange": [
+        61,
+        97
+      ],
+      "summary": "Connects a pgxpool to PostgreSQL with up to 5 attempts using quadratic backoff (1s, 4s, 9s, 16s, 25s), returning an error after exhaustion for K8s-managed pod restart.",
+      "tags": [
+        "service",
+        "database",
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:recorder/main.go:sanitizePayload",
+      "type": "function",
+      "name": "sanitizePayload",
+      "filePath": "recorder/main.go",
+      "lineRange": [
+        100,
+        104
+      ],
+      "summary": "Strips null bytes and \\u0000 sequences from raw MQTT payloads to prevent PostgreSQL JSONB SQLSTATE 22P05 errors.",
+      "tags": [
+        "utility",
+        "data-pipeline",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:recorder/main.go:normalizePayload",
+      "type": "function",
+      "name": "normalizePayload",
+      "filePath": "recorder/main.go",
+      "lineRange": [
+        107,
+        115
+      ],
+      "summary": "Ensures every MQTT payload is valid JSONB by wrapping non-JSON strings (e.g. 'ON', '1024') in {\"raw\":\"...\"} before insertion.",
+      "tags": [
+        "utility",
+        "data-pipeline",
+        "serialization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:recorder/main.go:makeHandler",
+      "type": "function",
+      "name": "makeHandler",
+      "filePath": "recorder/main.go",
+      "lineRange": [
+        117,
+        132
+      ],
+      "summary": "Factory returning an MQTT MessageHandler that normalises the payload and inserts it into PostgreSQL with a 5-second per-message timeout.",
+      "tags": [
+        "factory",
+        "event-handler",
+        "data-pipeline"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:recorder/main.go:connectMQTT",
+      "type": "function",
+      "name": "connectMQTT",
+      "filePath": "recorder/main.go",
+      "lineRange": [
+        134,
+        157
+      ],
+      "summary": "Creates a Paho MQTT client that subscribes to zigbee2mqtt/# inside the OnConnect handler, ensuring the subscription is replayed after every reconnection.",
+      "tags": [
+        "service",
+        "mqtt",
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "service:recorder/Dockerfile",
+      "type": "service",
+      "name": "Dockerfile",
+      "filePath": "recorder/Dockerfile",
+      "summary": "Multi-stage Docker build for the recorder service: compiles a static Go binary and runs it in a distroless/static-debian12 nonroot image with credentials provided via K8s Secrets at runtime.",
+      "tags": [
+        "containerization",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:recorder/migration.sql:states",
+      "type": "table",
+      "name": "states",
+      "filePath": "recorder/migration.sql",
+      "summary": "Core persistence table storing every received MQTT message as a JSONB column (device_state) keyed by topic, with timestamp, topic text index, and created_at DESC index for efficient time-range queries.",
+      "tags": [
+        "database",
+        "schema-definition",
+        "data-pipeline"
+      ],
+      "complexity": "simple",
+      "languageNotes": "JSONB column allows arbitrary sensor payload schemas without migrations; topic and created_at indexes support the API's filtered queries."
+    },
+    {
+      "id": "file:snug/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "snug/main.go",
+      "summary": "MQTT automation daemon that listens for button press events on both local and multi-RPi Zigbee2MQTT topics and sends a TOGGLE command to a configured smart plug, supporting optional RPi and action filters.",
+      "tags": [
+        "entry-point",
+        "service",
+        "event-handler",
+        "mqtt"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "service:snug/Dockerfile",
+      "type": "service",
+      "name": "Dockerfile",
+      "filePath": "snug/Dockerfile",
+      "summary": "Multi-stage Docker build for the snug automation daemon: compiles a static Go binary and runs it in a distroless/static-debian12 nonroot image with runtime flags passed via K8s pod args.",
+      "tags": [
+        "containerization",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:monitor/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "monitor/main.go",
+      "summary": "Interactive terminal dashboard that subscribes to all zigbee2mqtt/# MQTT topics and renders a live TUI (ANSI colours, device list, real-time values, event log) refreshed every second via a ticker.",
+      "tags": [
+        "entry-point",
+        "service",
+        "monitoring",
+        "event-handler"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:monitor/main.go:setDevices",
+      "type": "function",
+      "name": "setDevices",
+      "filePath": "monitor/main.go",
+      "lineRange": [
+        57,
+        71
+      ],
+      "summary": "Thread-safe update of the device list for a given RPi, filtering out the Coordinator and sorting by friendly name.",
+      "tags": [
+        "data-model",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:monitor/main.go:updateValues",
+      "type": "function",
+      "name": "updateValues",
+      "filePath": "monitor/main.go",
+      "lineRange": [
+        73,
+        100
+      ],
+      "summary": "Thread-safe update of live sensor values for a device; diffs old vs new values and appends change events to the ring buffer.",
+      "tags": [
+        "event-handler",
+        "data-model"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:monitor/main.go:formatValue",
+      "type": "function",
+      "name": "formatValue",
+      "filePath": "monitor/main.go",
+      "lineRange": [
+        148,
+        193
+      ],
+      "summary": "Formats a sensor value for terminal display by key name: adds units (°C, %, hPa, mV, lx, ppm), renders coloured state/contact/occupancy/action indicators, and shows battery and LQI bars.",
+      "tags": [
+        "utility",
+        "component"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:monitor/main.go:render",
+      "type": "function",
+      "name": "render",
+      "filePath": "monitor/main.go",
+      "lineRange": [
+        249,
+        393
+      ],
+      "summary": "Full terminal render cycle: clears the screen, prints the NOVOCEO ASCII header, lists devices per RPi with freshness indicators, shows live sensor values grouped by RPi, and appends the event log.",
+      "tags": [
+        "component",
+        "monitoring"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:send-device/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "send-device/main.go",
+      "summary": "One-shot CLI tool that connects to a MQTT broker, publishes a single state command or raw JSON payload to a Zigbee2MQTT device topic (local or multi-RPi), and exits — designed for scripting and automation.",
+      "tags": [
+        "entry-point",
+        "utility",
+        "script",
+        "mqtt"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:debug.go",
+      "type": "file",
+      "name": "debug.go",
+      "filePath": "debug.go",
+      "summary": "Standalone diagnostic tool that subscribes to zigbee2mqtt/# for 60 seconds and dumps every topic and raw payload to stderr, useful for inspecting MQTT traffic before modifying routing logic.",
+      "tags": [
+        "utility",
+        "monitoring",
+        "script"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:go.mod",
+      "type": "config",
+      "name": "go.mod",
+      "filePath": "go.mod",
+      "summary": "Go module manifest for the zigbee-monitor monorepo (Go 1.25) declaring direct dependencies on Paho MQTT, pgx v5, godotenv, and Fiber v2 shared across all service binaries.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "dependency-management"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:mosquitto/Dockerfile",
+      "type": "service",
+      "name": "Dockerfile",
+      "filePath": "mosquitto/Dockerfile",
+      "summary": "Thin wrapper over eclipse-mosquitto:2 that injects a custom entrypoint script for dynamic K8s bridge configuration generation at container startup.",
+      "tags": [
+        "containerization",
+        "infrastructure",
+        "mqtt"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mosquitto/entrypoint.sh",
+      "type": "file",
+      "name": "entrypoint.sh",
+      "filePath": "mosquitto/entrypoint.sh",
+      "summary": "Container entrypoint that generates a Mosquitto configuration at runtime: writes base listener config and adds a bidirectional MQTT bridge entry for each peer pod in the StatefulSet, then exec's mosquitto.",
+      "tags": [
+        "script",
+        "infrastructure",
+        "configuration"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Uses POSIX sh with HOSTNAME parsing to derive the pod ordinal for StatefulSet-aware bridge peering — compatible with distroless-adjacent images that may lack bash."
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Project overview for novoceo: describes the full Zigbee-to-web pipeline (Zigbee2MQTT -> MQTT -> k3s services), lists all components with their roles and replica counts, and links to detailed documentation.",
+      "tags": [
+        "documentation",
+        "entry-point",
+        "overview",
+        "architecture"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:docs/api.md",
+      "type": "document",
+      "name": "api.md",
+      "filePath": "docs/api.md",
+      "summary": "Complete REST API reference for the novoceo Go/Fiber service, covering 6 endpoints (healthz, device command, device state, contact sensor, temperature history, bridge health), authentication via Bearer token, and environment variables.",
+      "tags": [
+        "documentation",
+        "api-schema",
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/architecture.md",
+      "type": "document",
+      "name": "architecture.md",
+      "filePath": "docs/architecture.md",
+      "summary": "Full architecture and MQTT topology documentation with Mermaid diagrams, sequence flow for button-press to prise-toggle, MQTT topic naming conventions, zigbee2mqtt RPi configuration, and device friendly names.",
+      "tags": [
+        "documentation",
+        "architecture",
+        "infrastructure",
+        "mqtt"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/database.md",
+      "type": "document",
+      "name": "database.md",
+      "filePath": "docs/database.md",
+      "summary": "PostgreSQL schema documentation for the novoceo database on Scaleway, describing the `states` table structure, payload normalization rules, migration steps, and useful diagnostic queries.",
+      "tags": [
+        "documentation",
+        "database",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/dev.md",
+      "type": "document",
+      "name": "dev.md",
+      "filePath": "docs/dev.md",
+      "summary": "Local development guide covering prerequisites, .env setup, per-service run commands (monitor, snug, recorder, api, front, send-device), Docker usage, and multi-arch build instructions.",
+      "tags": [
+        "documentation",
+        "development",
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/kubernetes.md",
+      "type": "document",
+      "name": "kubernetes.md",
+      "filePath": "docs/kubernetes.md",
+      "summary": "Kubernetes deployment guide for the k3s cluster, detailing manifest structure, container image registry, full deploy sequence, build/deploy scripts, resource quotas, and TLS/Ingress configuration.",
+      "tags": [
+        "documentation",
+        "infrastructure",
+        "deployment",
+        "ci-cd"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "resource:k8s/namespace.yaml",
+      "type": "resource",
+      "name": "namespace.yaml",
+      "filePath": "k8s/namespace.yaml",
+      "summary": "Kubernetes Namespace manifest creating the `novoceo` namespace that isolates all project workloads on the k3s cluster.",
+      "tags": [
+        "infrastructure",
+        "orchestration",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/api/configmap.yaml",
+      "type": "resource",
+      "name": "configmap.yaml",
+      "filePath": "k8s/api/configmap.yaml",
+      "summary": "ConfigMap `api-config` injecting non-sensitive environment variables into the API pods: MQTT broker address, PostgreSQL connection details, and the API listen port (5000).",
+      "tags": [
+        "configuration",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:k8s/api/deployment.yaml",
+      "type": "service",
+      "name": "deployment.yaml",
+      "filePath": "k8s/api/deployment.yaml",
+      "summary": "Kubernetes Deployment for the API service with 2 active/active replicas, pulling the multi-arch `novoceo-api:dev` image, injecting config from ConfigMap and Secrets, and exposing a /healthz liveness probe on port 5000.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "containerization"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:k8s/api/dev-build-deploy.sh",
+      "type": "file",
+      "name": "dev-build-deploy.sh",
+      "filePath": "k8s/api/dev-build-deploy.sh",
+      "summary": "Shell script that builds the `novoceo-api` Docker image for linux/amd64 and linux/arm64 using docker buildx, pushes it to the Scaleway registry, then triggers a rolling restart of the API Deployment in k3s.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "build-system",
+        "containerization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/api/ingress.yaml",
+      "type": "resource",
+      "name": "ingress.yaml",
+      "filePath": "k8s/api/ingress.yaml",
+      "summary": "Nginx Ingress resource exposing the API at `novoceo.api.local.happyapi.fr` with TLS termination via cert-manager/letsencrypt and SSL redirect enforced.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "security"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/api/secret.yaml",
+      "type": "resource",
+      "name": "secret.yaml",
+      "filePath": "k8s/api/secret.yaml",
+      "summary": "Kubernetes Secret `api-secret` containing the base64-encoded API_TOKEN bearer credential injected into the API pods.",
+      "tags": [
+        "infrastructure",
+        "security",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/api/service.yaml",
+      "type": "resource",
+      "name": "service.yaml",
+      "filePath": "k8s/api/service.yaml",
+      "summary": "ClusterIP Service routing internal cluster traffic to the API pods on port 5000, enabling other services (front, ingress) to reach the API by DNS name `api`.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "orchestration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/front/configmap.yaml",
+      "type": "resource",
+      "name": "configmap.yaml",
+      "filePath": "k8s/front/configmap.yaml",
+      "summary": "ConfigMap `front-config` injecting API_URL (`http://api:5000`) and FRONT_PORT (3000) into the front pods, wiring the dashboard to the internal API service.",
+      "tags": [
+        "configuration",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:k8s/front/deployment.yaml",
+      "type": "service",
+      "name": "deployment.yaml",
+      "filePath": "k8s/front/deployment.yaml",
+      "summary": "Kubernetes Deployment for the HTMX frontend with 2 active/active replicas, pulling the multi-arch `novoceo-front:dev` image, minimal resource allocation (20m CPU / 16Mi RAM), and a / liveness probe on port 3000.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "containerization"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:k8s/front/dev-build-deploy.sh",
+      "type": "file",
+      "name": "dev-build-deploy.sh",
+      "filePath": "k8s/front/dev-build-deploy.sh",
+      "summary": "Shell script that builds the `novoceo-front` Docker image for linux/amd64 and linux/arm64 using docker buildx, pushes it to the Scaleway registry, then triggers a rolling restart of the front Deployment in k3s.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "build-system",
+        "containerization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/front/ingress.yaml",
+      "type": "resource",
+      "name": "ingress.yaml",
+      "filePath": "k8s/front/ingress.yaml",
+      "summary": "Nginx Ingress resource exposing the frontend dashboard at `novoceo.front.local.happyapi.fr` with TLS via cert-manager/letsencrypt and SSL redirect.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "security"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/front/secret.yaml",
+      "type": "resource",
+      "name": "secret.yaml",
+      "filePath": "k8s/front/secret.yaml",
+      "summary": "Kubernetes Secret `front-secret` containing the base64-encoded API_TOKEN used by the front service to authenticate against the API.",
+      "tags": [
+        "infrastructure",
+        "security",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/front/service.yaml",
+      "type": "resource",
+      "name": "service.yaml",
+      "filePath": "k8s/front/service.yaml",
+      "summary": "ClusterIP Service routing internal cluster traffic to the front pods on port 3000, making the HTMX dashboard reachable by ingress and other in-cluster consumers.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "orchestration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/mosquitto/configmap.yaml",
+      "type": "resource",
+      "name": "configmap.yaml",
+      "filePath": "k8s/mosquitto/configmap.yaml",
+      "summary": "ConfigMap `mosquitto-config` holding the mosquitto.conf base configuration (listener on 0.0.0.0:1883, anonymous access, persistence to /mosquitto/data); used as a reference since actual config is generated by the container entrypoint.",
+      "tags": [
+        "configuration",
+        "infrastructure",
+        "mqtt"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:k8s/mosquitto/deployment.yaml",
+      "type": "service",
+      "name": "deployment.yaml",
+      "filePath": "k8s/mosquitto/deployment.yaml",
+      "summary": "Kubernetes StatefulSet running 2 HA mosquitto broker replicas with per-pod 100Mi PVCs for persistence, bridging configured via MOSQUITTO_REPLICAS/HEADLESS_SVC env vars, and TCP liveness/readiness probes on port 1883.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "containerization",
+        "mqtt"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "StatefulSet (not Deployment) is required here so each pod gets its own stable DNS name and PVC for the MQTT bridge HA setup."
+    },
+    {
+      "id": "file:k8s/mosquitto/dev-build-deploy.sh",
+      "type": "file",
+      "name": "dev-build-deploy.sh",
+      "filePath": "k8s/mosquitto/dev-build-deploy.sh",
+      "summary": "Shell script that builds the custom mosquitto Docker image for linux/amd64 and linux/arm64 using docker buildx, pushes it to the Scaleway registry, then triggers a rolling restart of the mosquitto StatefulSet in k3s.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "build-system",
+        "containerization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:k8s/mosquitto/pvc.yaml",
+      "type": "service",
+      "name": "pvc.yaml",
+      "filePath": "k8s/mosquitto/pvc.yaml",
+      "summary": "Kubernetes headless Service for Mosquitto enabling DNS-based inter-pod resolution within the novoceo namespace, used by the MQTT bridge in StatefulSet mode.",
+      "tags": [
+        "infrastructure",
+        "orchestration",
+        "mqtt",
+        "kubernetes"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Despite the filename suggesting a PVC, this file actually defines a headless Service (clusterIP: None) for intra-cluster DNS resolution."
+    },
+    {
+      "id": "service:k8s/mosquitto/service.yaml",
+      "type": "service",
+      "name": "service.yaml",
+      "filePath": "k8s/mosquitto/service.yaml",
+      "summary": "Kubernetes NodePort Service exposing the Mosquitto MQTT broker on port 32500, making it reachable from outside the cluster (including the local network and the RPi).",
+      "tags": [
+        "infrastructure",
+        "orchestration",
+        "mqtt",
+        "kubernetes"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/recorder/configmap.yaml",
+      "type": "resource",
+      "name": "configmap.yaml",
+      "filePath": "k8s/recorder/configmap.yaml",
+      "summary": "Kubernetes ConfigMap supplying non-sensitive runtime configuration to the recorder pod, including the MQTT broker URL and the external database host/port/name.",
+      "tags": [
+        "infrastructure",
+        "configuration",
+        "kubernetes",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:k8s/recorder/deployment.yaml",
+      "type": "service",
+      "name": "deployment.yaml",
+      "filePath": "k8s/recorder/deployment.yaml",
+      "summary": "Kubernetes Deployment running the recorder service (one replica) in the novoceo namespace, injecting config and secrets via envFrom and pulling the image from Scaleway registry.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "kubernetes",
+        "recorder"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "pipeline:k8s/recorder/dev-build-deploy.sh",
+      "type": "pipeline",
+      "name": "dev-build-deploy.sh",
+      "filePath": "k8s/recorder/dev-build-deploy.sh",
+      "summary": "CI helper script that builds a multi-arch (amd64+arm64) Docker image for the recorder service and pushes it to Scaleway registry, then triggers a rolling restart in Kubernetes.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "containerization",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:k8s/recorder/secret.yaml",
+      "type": "resource",
+      "name": "secret.yaml",
+      "filePath": "k8s/recorder/secret.yaml",
+      "summary": "Kubernetes Opaque Secret holding base64-encoded database credentials (DB_USER, DB_PASSWORD) for the recorder service.",
+      "tags": [
+        "infrastructure",
+        "security",
+        "kubernetes",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:k8s/snug/deployment.yaml",
+      "type": "service",
+      "name": "deployment.yaml",
+      "filePath": "k8s/snug/deployment.yaml",
+      "summary": "Kubernetes Deployment for the snug service, which listens on MQTT and reacts to Zigbee button/plug events, configured with broker address and device names via CLI args.",
+      "tags": [
+        "infrastructure",
+        "deployment",
+        "kubernetes",
+        "mqtt"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "pipeline:k8s/snug/dev-build-deploy.sh",
+      "type": "pipeline",
+      "name": "dev-build-deploy.sh",
+      "filePath": "k8s/snug/dev-build-deploy.sh",
+      "summary": "CI helper script that builds a multi-arch Docker image for the snug service and pushes it to Scaleway registry, then triggers a rolling restart in Kubernetes.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "containerization",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:rpi/start-z2m·sh",
+      "type": "file",
+      "name": "start-z2m·sh",
+      "filePath": "rpi/start-z2m·sh",
+      "summary": "Manual debug launcher for Zigbee2MQTT on the RPi that wraps the Node.js process in an auto-restart loop with a 5-second delay, intended as a foreground debugging alternative to the systemd service.",
+      "tags": [
+        "script",
+        "zigbee",
+        "mqtt",
+        "debugging"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:rpi/zigbee2mqtt.service",
+      "type": "config",
+      "name": "zigbee2mqtt.service",
+      "filePath": "rpi/zigbee2mqtt.service",
+      "summary": "Systemd unit file for running Zigbee2MQTT as a persistent service on the novoceo-os Raspberry Pi, set to restart on failure with journal logging.",
+      "tags": [
+        "configuration",
+        "infrastructure",
+        "zigbee",
+        "deployment"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:shell.nix",
+      "type": "config",
+      "name": "shell.nix",
+      "filePath": "shell.nix",
+      "summary": "Nix development shell providing mosquitto and Go tooling, and auto-generating the local mosquitto.conf if absent, with usage hints for starting the broker and running the monitor.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "development",
+        "nix"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Uses pkgs.mkShell with a shellHook that scaffolds runtime directories, keeping the dev setup self-contained."
+    },
+    {
+      "id": "file:start.sh",
+      "type": "file",
+      "name": "start.sh",
+      "filePath": "start.sh",
+      "summary": "Local development broker launcher that supports both native (via Nix shell) and Docker modes for Mosquitto, first stopping any existing instance and then tracking the PID for clean shutdown.",
+      "tags": [
+        "script",
+        "mqtt",
+        "development",
+        "entry-point"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:stop.sh",
+      "type": "file",
+      "name": "stop.sh",
+      "filePath": "stop.sh",
+      "summary": "Local development broker stopper that gracefully halts Mosquitto in either Docker or native mode by checking a PID file or using pkill as fallback.",
+      "tags": [
+        "script",
+        "mqtt",
+        "development",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:run/mosquitto/mosquitto.conf",
+      "type": "config",
+      "name": "mosquitto.conf",
+      "filePath": "run/mosquitto/mosquitto.conf",
+      "summary": "Native-mode Mosquitto configuration for local development, enabling anonymous connections on port 1883 with persistence in the local run directory.",
+      "tags": [
+        "configuration",
+        "mqtt",
+        "development"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:run/mosquitto/mosquitto-docker.conf",
+      "type": "config",
+      "name": "mosquitto-docker.conf",
+      "filePath": "run/mosquitto/mosquitto-docker.conf",
+      "summary": "Docker-mode Mosquitto configuration for local development, identical in policy to the native conf but with persistence path mapped to the container's /mosquitto/data/ volume.",
+      "tags": [
+        "configuration",
+        "mqtt",
+        "containerization",
+        "development"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.dockerignore",
+      "type": "config",
+      "name": ".dockerignore",
+      "filePath": ".dockerignore",
+      "summary": "Docker build context exclusion file preventing secrets (.env), version-control metadata (.git), runtime data (run/), and pre-built binaries from being included in Docker images.",
+      "tags": [
+        "configuration",
+        "containerization",
+        "security",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.env",
+      "type": "config",
+      "name": ".env",
+      "filePath": ".env",
+      "summary": "Local development environment variables defining MQTT broker address, API token, and database connection details for the novoceo stack; excluded from Docker builds and should not be committed.",
+      "tags": [
+        "configuration",
+        "security",
+        "development",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:go.sum",
+      "type": "config",
+      "name": "go.sum",
+      "filePath": "go.sum",
+      "summary": "Go module checksum file locking the cryptographic hashes of all direct and indirect dependencies, ensuring reproducible and tamper-proof builds.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "dependency-management"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.claude/settings.json",
+      "type": "config",
+      "name": "settings.json",
+      "filePath": ".claude/settings.json",
+      "summary": "Claude Code project settings enabling the understand-anything plugin for this repository.",
+      "tags": [
+        "configuration",
+        "development",
+        "tooling"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.claude/settings.local.json",
+      "type": "config",
+      "name": "settings.local.json",
+      "filePath": ".claude/settings.local.json",
+      "summary": "Local Claude Code permission allowlist granting the AI assistant access to shell commands, kubectl, docker, MQTT tools, and other project-specific operations for the novoceo workspace.",
+      "tags": [
+        "configuration",
+        "security",
+        "development",
+        "tooling"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "table:run/mosquitto/data/mosquitto.db",
+      "type": "table",
+      "name": "mosquitto.db",
+      "filePath": "run/mosquitto/data/mosquitto.db",
+      "summary": "Mosquitto persistence database file (binary SQLite-compatible format) used by the Docker-mode broker to retain retained messages and subscription state across restarts.",
+      "tags": [
+        "database",
+        "mqtt",
+        "data-pipeline"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:run/mosquitto/mosquitto.db",
+      "type": "table",
+      "name": "mosquitto.db",
+      "filePath": "run/mosquitto/mosquitto.db",
+      "summary": "Mosquitto persistence database file used by the native-mode broker to retain retained messages and subscription state across restarts.",
+      "tags": [
+        "database",
+        "mqtt",
+        "data-pipeline"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:postCommand",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:getTemperature",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:getTemperatureHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:getBridgeHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:getContactState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:getDeviceState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:initDB",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:initMQTT",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "function:api/main.go:bearerAuth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:api/Dockerfile",
+      "target": "file:api/main.go",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "function:front/main.go:get",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "function:front/main.go:post",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/card_contact.go",
+      "target": "function:front/card_contact.go:htmxContact",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/card_health.go",
+      "target": "function:front/card_health.go:htmxHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/card_prise.go",
+      "target": "function:front/card_prise.go:renderPrise",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/card_prise.go",
+      "target": "function:front/card_prise.go:htmxToggle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/card_temp.go",
+      "target": "function:front/card_temp.go:sparklineSVG",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/card_temp.go",
+      "target": "function:front/card_temp.go:htmxTemperature",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "function:recorder/main.go:initDB",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "function:recorder/main.go:sanitizePayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "function:recorder/main.go:normalizePayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "function:recorder/main.go:makeHandler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "function:recorder/main.go:connectMQTT",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:recorder/Dockerfile",
+      "target": "file:recorder/main.go",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "table:recorder/migration.sql:states",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:api/main.go",
+      "target": "table:recorder/migration.sql:states",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:snug/Dockerfile",
+      "target": "file:snug/main.go",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:monitor/main.go",
+      "target": "function:monitor/main.go:setDevices",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:monitor/main.go",
+      "target": "function:monitor/main.go:updateValues",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:monitor/main.go",
+      "target": "function:monitor/main.go:formatValue",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:monitor/main.go",
+      "target": "function:monitor/main.go:render",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:front/Dockerfile",
+      "target": "file:front/main.go",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:go.mod",
+      "target": "file:api/main.go",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:go.mod",
+      "target": "file:front/main.go",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:go.mod",
+      "target": "file:recorder/main.go",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:go.mod",
+      "target": "file:snug/main.go",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:go.mod",
+      "target": "file:monitor/main.go",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:go.mod",
+      "target": "file:send-device/main.go",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:mosquitto/Dockerfile",
+      "target": "file:mosquitto/entrypoint.sh",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "file:front/card_contact.go",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "file:front/card_health.go",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "file:front/card_prise.go",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "file:front/card_temp.go",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "file:front/index.go",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:front/main.go",
+      "target": "file:api/main.go",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:recorder/main.go",
+      "target": "service:mosquitto/Dockerfile",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:snug/main.go",
+      "target": "service:mosquitto/Dockerfile",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:monitor/main.go",
+      "target": "service:mosquitto/Dockerfile",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:send-device/main.go",
+      "target": "service:mosquitto/Dockerfile",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:README.md",
+      "target": "document:docs/architecture.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "document:docs/api.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "document:docs/kubernetes.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "document:docs/dev.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "document:docs/database.md",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/kubernetes.md",
+      "target": "resource:k8s/namespace.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/kubernetes.md",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/kubernetes.md",
+      "target": "service:k8s/front/deployment.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/kubernetes.md",
+      "target": "service:k8s/mosquitto/deployment.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/architecture.md",
+      "target": "service:k8s/mosquitto/deployment.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/api.md",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "resource:k8s/namespace.yaml",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "provisions",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/namespace.yaml",
+      "target": "service:k8s/front/deployment.yaml",
+      "type": "provisions",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/namespace.yaml",
+      "target": "service:k8s/mosquitto/deployment.yaml",
+      "type": "provisions",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/api/configmap.yaml",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "resource:k8s/api/secret.yaml",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "resource:k8s/api/service.yaml",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "serves",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/api/ingress.yaml",
+      "target": "resource:k8s/api/service.yaml",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:k8s/api/dev-build-deploy.sh",
+      "target": "service:k8s/api/deployment.yaml",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/front/configmap.yaml",
+      "target": "service:k8s/front/deployment.yaml",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "resource:k8s/front/secret.yaml",
+      "target": "service:k8s/front/deployment.yaml",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "resource:k8s/front/service.yaml",
+      "target": "service:k8s/front/deployment.yaml",
+      "type": "serves",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/front/ingress.yaml",
+      "target": "resource:k8s/front/service.yaml",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:k8s/front/dev-build-deploy.sh",
+      "target": "service:k8s/front/deployment.yaml",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/mosquitto/configmap.yaml",
+      "target": "service:k8s/mosquitto/deployment.yaml",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:k8s/mosquitto/dev-build-deploy.sh",
+      "target": "service:k8s/mosquitto/deployment.yaml",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "resource:k8s/front/configmap.yaml",
+      "target": "resource:k8s/api/service.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:k8s/api/deployment.yaml",
+      "target": "service:k8s/mosquitto/deployment.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:k8s/mosquitto/service.yaml",
+      "target": "service:k8s/mosquitto/pvc.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "service:k8s/recorder/deployment.yaml",
+      "target": "resource:k8s/recorder/configmap.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:k8s/recorder/deployment.yaml",
+      "target": "resource:k8s/recorder/secret.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:k8s/recorder/deployment.yaml",
+      "target": "service:k8s/mosquitto/service.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "pipeline:k8s/recorder/dev-build-deploy.sh",
+      "target": "service:k8s/recorder/deployment.yaml",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "service:k8s/snug/deployment.yaml",
+      "target": "service:k8s/mosquitto/service.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "pipeline:k8s/snug/dev-build-deploy.sh",
+      "target": "service:k8s/snug/deployment.yaml",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:rpi/zigbee2mqtt.service",
+      "target": "file:rpi/start-z2m·sh",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:shell.nix",
+      "target": "file:start.sh",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:shell.nix",
+      "target": "config:run/mosquitto/mosquitto.conf",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:start.sh",
+      "target": "file:stop.sh",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:start.sh",
+      "target": "config:run/mosquitto/mosquitto.conf",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:start.sh",
+      "target": "config:run/mosquitto/mosquitto-docker.conf",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:start.sh",
+      "target": "table:run/mosquitto/data/mosquitto.db",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:stop.sh",
+      "target": "table:run/mosquitto/mosquitto.db",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:run/mosquitto/mosquitto.conf",
+      "target": "table:run/mosquitto/mosquitto.db",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:run/mosquitto/mosquitto-docker.conf",
+      "target": "table:run/mosquitto/data/mosquitto.db",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:.dockerignore",
+      "target": "config:.env",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:.env",
+      "target": "service:k8s/recorder/deployment.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "resource:k8s/recorder/configmap.yaml",
+      "target": "service:k8s/mosquitto/service.yaml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:frontend",
+      "name": "Frontend Dashboard",
+      "description": "HTMX/Tailwind IoT dashboard service that proxies sensor data from the API and renders server-side HTML partials for health, temperature, smart plug, and door contact cards.",
+      "nodeIds": [
+        "file:front/main.go",
+        "file:front/card_contact.go",
+        "file:front/card_health.go",
+        "file:front/card_prise.go",
+        "file:front/card_temp.go",
+        "file:front/index.go"
+      ]
+    },
+    {
+      "id": "layer:backend-services",
+      "name": "Backend Services",
+      "description": "Go microservices forming the core application logic: the Fiber REST API serving sensor data and device commands, the MQTT recorder persisting zigbee2mqtt messages to PostgreSQL, the snug automation daemon toggling smart plugs on button press, the live TUI monitor, and the one-shot CLI publisher.",
+      "nodeIds": [
+        "file:api/main.go",
+        "file:recorder/main.go",
+        "file:snug/main.go",
+        "file:monitor/main.go",
+        "file:send-device/main.go",
+        "file:debug.go"
+      ]
+    },
+    {
+      "id": "layer:data",
+      "name": "Data Layer",
+      "description": "PostgreSQL persistence schema for MQTT device states (migration.sql) and Mosquitto broker persistence databases used in local development.",
+      "nodeIds": [
+        "table:recorder/migration.sql:states",
+        "table:run/mosquitto/data/mosquitto.db",
+        "table:run/mosquitto/mosquitto.db"
+      ]
+    },
+    {
+      "id": "layer:mqtt-broker",
+      "name": "MQTT Broker & Edge",
+      "description": "Mosquitto MQTT broker image and runtime entrypoint for dynamic K8s bridge configuration, plus the Raspberry Pi Zigbee2MQTT service and debug launcher that form the physical edge of the Zigbee data pipeline.",
+      "nodeIds": [
+        "service:mosquitto/Dockerfile",
+        "file:mosquitto/entrypoint.sh",
+        "file:rpi/start-z2m·sh",
+        "config:rpi/zigbee2mqtt.service"
+      ]
+    },
+    {
+      "id": "layer:infrastructure",
+      "name": "Kubernetes & Container Infrastructure",
+      "description": "All Dockerfiles, Kubernetes manifests (Deployments, Services, Ingresses, ConfigMaps, Secrets, PVCs, Namespace), and dev-build-deploy scripts that package and orchestrate every service on the k3s cluster.",
+      "nodeIds": [
+        "service:api/Dockerfile",
+        "service:front/Dockerfile",
+        "service:recorder/Dockerfile",
+        "service:snug/Dockerfile",
+        "resource:k8s/namespace.yaml",
+        "resource:k8s/api/configmap.yaml",
+        "service:k8s/api/deployment.yaml",
+        "file:k8s/api/dev-build-deploy.sh",
+        "resource:k8s/api/ingress.yaml",
+        "resource:k8s/api/secret.yaml",
+        "resource:k8s/api/service.yaml",
+        "resource:k8s/front/configmap.yaml",
+        "service:k8s/front/deployment.yaml",
+        "file:k8s/front/dev-build-deploy.sh",
+        "resource:k8s/front/ingress.yaml",
+        "resource:k8s/front/secret.yaml",
+        "resource:k8s/front/service.yaml",
+        "resource:k8s/mosquitto/configmap.yaml",
+        "service:k8s/mosquitto/deployment.yaml",
+        "file:k8s/mosquitto/dev-build-deploy.sh",
+        "service:k8s/mosquitto/pvc.yaml",
+        "service:k8s/mosquitto/service.yaml",
+        "resource:k8s/recorder/configmap.yaml",
+        "service:k8s/recorder/deployment.yaml",
+        "pipeline:k8s/recorder/dev-build-deploy.sh",
+        "resource:k8s/recorder/secret.yaml",
+        "service:k8s/snug/deployment.yaml",
+        "pipeline:k8s/snug/dev-build-deploy.sh"
+      ]
+    },
+    {
+      "id": "layer:dev-environment",
+      "name": "Development Environment",
+      "description": "Local development tooling and configuration: Mosquitto native/Docker configs, broker start/stop scripts, Nix dev shell, Go module manifests, environment variables, and Docker build context settings.",
+      "nodeIds": [
+        "config:run/mosquitto/mosquitto.conf",
+        "config:run/mosquitto/mosquitto-docker.conf",
+        "file:start.sh",
+        "file:stop.sh",
+        "config:shell.nix",
+        "config:go.mod",
+        "config:go.sum",
+        "config:.env",
+        "config:.dockerignore",
+        "config:.claude/settings.json",
+        "config:.claude/settings.local.json"
+      ]
+    },
+    {
+      "id": "layer:documentation",
+      "name": "Documentation",
+      "description": "Project-wide documentation covering the Zigbee-to-web architecture overview, REST API reference, PostgreSQL schema, Kubernetes deployment guide, and local development setup.",
+      "nodeIds": [
+        "document:README.md",
+        "document:docs/api.md",
+        "document:docs/architecture.md",
+        "document:docs/database.md",
+        "document:docs/dev.md",
+        "document:docs/kubernetes.md"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Vue d'ensemble du projet",
+      "description": "Le README et le doc d'architecture décrivent la pipeline complète Zigbee-to-web : un bouton Zigbee émet un événement via Zigbee2MQTT, le broker Mosquitto distribue le message MQTT, plusieurs services Go le consomment (snug pour l'automatisation, recorder pour la persistance), et l'API REST expose les données au dashboard HTMX. Ces deux fichiers contiennent des diagrammes Mermaid qui sont le meilleur point d'entrée avant de toucher au code.",
+      "nodeIds": [
+        "document:README.md",
+        "document:docs/architecture.md"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Monorepo Go & dépendances",
+      "description": "Le fichier go.mod définit le module racine 'zigbee-monitor' en Go 1.25 et liste les dépendances partagées par tous les services : Fiber v2 pour le HTTP, paho-mqtt pour MQTT, pgx pour PostgreSQL, et bubbletea pour le TUI. C'est la colonne vertébrale du monorepo — chaque binaire (api, front, recorder, snug, monitor) compile depuis ce même module, ce qui simplifie la gestion des versions.",
+      "nodeIds": [
+        "config:go.mod"
+      ],
+      "languageLesson": "En Go, un monorepo utilise un seul go.mod à la racine avec des packages dans des sous-dossiers. Chaque sous-dossier contenant un 'package main' produit un binaire indépendant compilé avec 'go build ./api/', 'go build ./recorder/', etc."
+    },
+    {
+      "order": 3,
+      "title": "Edge Zigbee : le Raspberry Pi",
+      "description": "Le point de départ physique du flux est le Raspberry Pi qui exécute Zigbee2MQTT. Le fichier systemd zigbee2mqtt.service garantit que le processus redémarre automatiquement au boot, tandis que start-z2m·sh fournit un lanceur manuel avec boucle de redémarrage pour le debug. Ces fichiers représentent la couche edge : ils transforment les trames radio Zigbee (IEEE 802.15.4) en messages JSON publiés sur MQTT sous les topics zigbee2mqtt/#.",
+      "nodeIds": [
+        "config:rpi/zigbee2mqtt.service",
+        "file:rpi/start-z2m·sh"
+      ],
+      "languageLesson": "Un fichier systemd unit avec 'Restart=always' et 'RestartSec=5' relance automatiquement le service en cas de crash. La directive 'ExecStart' pointe vers le binaire ou le script d'entrée."
+    },
+    {
+      "order": 4,
+      "title": "Broker MQTT Mosquitto (HA)",
+      "description": "Mosquitto est le hub central qui reçoit tous les messages Zigbee2MQTT et les redistribue aux consommateurs (recorder, snug, monitor). En production K8s, la configuration est générée dynamiquement par entrypoint.sh au démarrage du conteneur : le script construit les entrées de bridge MQTT bidirectionnelles entre les pods d'un StatefulSet, permettant la haute disponibilité avec 2 réplicas. Le Dockerfile Mosquitto est une fine couche par-dessus l'image officielle eclipse-mosquitto:2.",
+      "nodeIds": [
+        "service:mosquitto/Dockerfile",
+        "file:mosquitto/entrypoint.sh"
+      ],
+      "languageLesson": "La configuration dynamique à l'entrée du conteneur (pattern entrypoint-as-config-generator) est courante pour les StatefulSets K8s où chaque pod a une identité DNS stable (pod-0, pod-1). L'entrypoint lit le hostname du pod pour configurer les bridges MQTT inter-pods."
+    },
+    {
+      "order": 5,
+      "title": "Recorder : MQTT vers PostgreSQL",
+      "description": "Le recorder est le premier consommateur MQTT. Il s'abonne à zigbee2mqtt/# et insère chaque message reçu comme une ligne JSONB dans la table 'states' de PostgreSQL. Ce service joue le rôle d'un journal immuable : il ne filtre rien, ne transforme rien — tout événement Zigbee est archivé avec son topic, son payload et un timestamp. L'API lira ensuite cette table pour exposer les données aux clients.",
+      "nodeIds": [
+        "file:recorder/main.go"
+      ],
+      "languageLesson": "Go utilise souvent le pattern 'select on channels' pour combiner un abonnement MQTT (messages entrants) avec un signal d'arrêt propre (os.Signal). Cela permet de vider le buffer avant de fermer la connexion à la base."
+    },
+    {
+      "order": 6,
+      "title": "Schéma de base de données",
+      "description": "La migration SQL définit la table 'states' avec trois colonnes essentielles : un identifiant autoincrémenté, un champ 'topic' (le chemin MQTT, ex: zigbee2mqtt/temperature-salon), et un champ 'payload' de type JSONB qui stocke le message brut. La documentation database.md explicite les index et les requêtes typiques. Grâce au JSONB PostgreSQL, l'API peut interroger des champs imbriqués du payload avec des opérateurs natifs sans schéma fixe.",
+      "nodeIds": [
+        "table:recorder/migration.sql:states",
+        "document:docs/database.md"
+      ],
+      "languageLesson": "JSONB en PostgreSQL stocke le JSON en binaire (d'où le 'B'), ce qui permet des index GIN et des requêtes comme 'payload->>'temperature'' ou 'payload @> '{\"contact\": true}'. C'est plus performant que TEXT pour des données semi-structurées."
+    },
+    {
+      "order": 7,
+      "title": "Automation snug : bouton vers prise",
+      "description": "Snug est le service d'automatisation qui ferme la boucle de contrôle sans passer par l'API : il écoute les événements de bouton Zigbee (action 'single', 'double', 'hold') et publie immédiatement un TOGGLE sur le topic de la prise connectée. Ce flux court-circuite volontairement la couche de persistance pour une réactivité maximale. C'est l'illustration du flux principal décrit dans le README : Bouton (Zigbee) -> zigbee2mqtt -> MQTT -> snug -> Prise (TOGGLE).",
+      "nodeIds": [
+        "file:snug/main.go"
+      ],
+      "languageLesson": "En Go, les services MQTT durables s'appuient sur le QoS 1 (at-least-once delivery) pour garantir la réception des commandes critiques. Le client paho-mqtt maintient une session persistante avec un 'clientID' unique pour récupérer les messages manqués après reconnexion."
+    },
+    {
+      "order": 8,
+      "title": "API REST : exposition des données",
+      "description": "L'API Fiber v2 est la couche d'accès aux données historiques stockées par le recorder. Elle se connecte à PostgreSQL via un pool pgx, lit la table 'states', et expose les données par topic ou device via des routes HTTP protégées par un Bearer token. Elle publie aussi des commandes MQTT de manière non-bloquante (goroutine) pour le contrôle à distance des appareils. La documentation api.md décrit l'ensemble des endpoints, paramètres et exemples de réponse.",
+      "nodeIds": [
+        "file:api/main.go",
+        "document:docs/api.md"
+      ],
+      "languageLesson": "Le pattern 'non-blocking MQTT publish' en Go lance la publication dans une goroutine anonyme ('go func() { client.Publish(...) }()') pour que l'handler HTTP retourne immédiatement un 202 Accepted sans attendre l'acquittement MQTT."
+    },
+    {
+      "order": 9,
+      "title": "Dashboard HTMX : la coque HTML",
+      "description": "index.go génère la page HTML complète du dashboard NOVOCEO, une Single-Page sans JavaScript framework. La coque inclut Tailwind CSS via CDN et HTMX pour les mises à jour partielles. Chaque carte de capteur est déclarée avec un attribut 'hx-trigger=every 5s' pointant vers un endpoint Go dédié — le navigateur re-fetche uniquement le fragment HTML de la carte, pas la page entière.",
+      "nodeIds": [
+        "file:front/index.go"
+      ],
+      "languageLesson": "HTMX remplace le besoin de JSON + JavaScript fetch en envoyant des requêtes HTTP qui retournent directement du HTML. L'attribut 'hx-swap=outerHTML' remplace le noeud DOM entier, tandis que 'hx-target=#card-id' peut rediriger la réponse vers un autre élément."
+    },
+    {
+      "order": 10,
+      "title": "Composants cartes du dashboard",
+      "description": "Chaque capteur Zigbee a son handler dédié dans front/ : card_temp.go interroge l'API pour les 24 dernières heures et génère un sparkline SVG inline, card_prise.go gère à la fois l'affichage d'état et le POST de toggle, card_contact.go affiche l'état porte ouverte/fermée, et card_health.go vérifie la santé du bridge Zigbee2MQTT. Tous ces handlers suivent le même pattern : appel HTTP à l'API, template Go inline, retour d'un fragment HTML.",
+      "nodeIds": [
+        "file:front/card_temp.go",
+        "file:front/card_prise.go",
+        "file:front/card_contact.go",
+        "file:front/card_health.go"
+      ],
+      "languageLesson": "Les templates Go inline (template.Must + strings.NewReader) évitent les fichiers .html séparés pour des fragments courts. La génération SVG programmatique (calcul des points du sparkline en Go pur) élimine une dépendance JavaScript pour la visualisation."
+    },
+    {
+      "order": 11,
+      "title": "Routage front-end & client HTTP",
+      "description": "front/main.go est le point d'entrée du service front : il instancie Fiber, enregistre toutes les routes des cartes (/card/temp, /card/prise, etc.), expose la route / vers index.go, et fournit les helpers HTTP partagés pour appeler l'API interne (injection du Bearer token, gestion des timeouts). La dépendance explicite vers api/main.go dans le graphe reflète ce couplage de service-à-service.",
+      "nodeIds": [
+        "file:front/main.go"
+      ]
+    },
+    {
+      "order": 12,
+      "title": "Infrastructure K8s : namespace & broker",
+      "description": "Le déploiement commence par le namespace 'novoceo' qui isole toutes les ressources, puis le StatefulSet Mosquitto qui tourne en 2 réplicas avec des PVCs dédiés pour la persistance. Le service K8s headless associé (pvc.yaml) permet aux pods de se résoudre par DNS (mosquitto-0.mosquitto, mosquitto-1.mosquitto), ce qui est utilisé par l'entrypoint.sh pour construire les bridges MQTT. La documentation kubernetes.md accompagne ces manifests.",
+      "nodeIds": [
+        "resource:k8s/namespace.yaml",
+        "service:k8s/mosquitto/deployment.yaml",
+        "service:k8s/mosquitto/pvc.yaml",
+        "document:docs/kubernetes.md"
+      ],
+      "languageLesson": "Un StatefulSet Kubernetes garantit une identité stable (nom de pod + DNS) et un volume persistant par pod. C'est le pattern correct pour les brokers MQTT en HA car chaque replica doit maintenir son propre état de session."
+    },
+    {
+      "order": 13,
+      "title": "Déploiement des services applicatifs",
+      "description": "Les Deployments pour api (2 réplicas), front (2 réplicas), recorder (1 réplica) et snug (1 réplica) sont chacun accompagnés d'un ConfigMap pour la configuration non-sensible et d'un Secret pour les credentials. Les Ingress nginx exposent api et front avec TLS sur le domaine local.happyapi.fr. Les scripts dev-build-deploy.sh automatisent le build multi-arch (linux/amd64 + linux/arm64 pour le RPi) et le rollout kubectl.",
+      "nodeIds": [
+        "service:k8s/api/deployment.yaml",
+        "service:k8s/recorder/deployment.yaml",
+        "resource:k8s/api/ingress.yaml",
+        "pipeline:k8s/recorder/dev-build-deploy.sh"
+      ],
+      "languageLesson": "Le build multi-arch avec 'docker buildx build --platform linux/amd64,linux/arm64' produit une image OCI multi-manifest. Kubernetes sélectionne automatiquement le bon manifest selon l'architecture du noeud, ce qui permet de déployer le même tag sur un cluster hétérogène (x86 servers + ARM RPi)."
+    },
+    {
+      "order": 14,
+      "title": "Outils de diagnostic",
+      "description": "Le projet inclut deux outils de debug pensés pour le développement et le dépannage : debug.go est un binaire standalone qui s'abonne à zigbee2mqtt/# pendant 60 secondes et affiche chaque message reçu, idéal pour vérifier que le broker est actif et que les capteurs émettent. monitor/main.go est un TUI interactif (bubbletea) qui affiche en temps réel l'activité MQTT dans le terminal. send-device/main.go complète le tableau en permettant d'envoyer manuellement une commande à un device.",
+      "nodeIds": [
+        "file:debug.go",
+        "file:monitor/main.go",
+        "file:send-device/main.go"
+      ],
+      "languageLesson": "bubbletea est le framework TUI Go basé sur le pattern Elm (Model-Update-View). Le 'Model' est la structure d'état, 'Update' traite les messages (keypress, MQTT event) et retourne un nouveau Model, 'View' génère la chaîne de caractères à afficher."
+    },
+    {
+      "order": 15,
+      "title": "Environnement de développement local",
+      "description": "Pour travailler sans K8s, start.sh démarre Mosquitto en mode natif ou Docker selon un flag, en utilisant les configurations mosquitto.conf ou mosquitto-docker.conf. Le fichier .env centralise les variables d'environnement (MQTT_BROKER, API_TOKEN, DATABASE_URL) consommées par tous les services Go. Le shell.nix fournit un environnement Nix reproductible avec mosquitto et les outils Go, et docs/dev.md documente les commandes 'go run' par service.",
+      "nodeIds": [
+        "file:start.sh",
+        "config:.env",
+        "config:shell.nix",
+        "document:docs/dev.md"
+      ],
+      "languageLesson": "Un shell.nix avec 'mkShell { buildInputs = [ go mosquitto ]; }' garantit que tous les développeurs utilisent exactement les mêmes versions des outils, indépendamment du système hôte. 'nix-shell' active l'environnement sans modifier le système global."
+    }
+  ]
+}

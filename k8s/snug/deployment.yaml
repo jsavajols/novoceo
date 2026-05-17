@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snug
+  namespace: novoceo
+  labels:
+    app: snug
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snug
+  template:
+    metadata:
+      labels:
+        app: snug
+    spec:
+      containers:
+        - name: snug
+          image: rg.fr-par.scw.cloud/funcscwjeromet1q1hfov/snug:dev
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: Europe/Paris
+          args:
+            - -broker
+            - tcp://192.168.1.128:32500
+            - -button
+            - Bouton
+            - -plug
+            - Prise
+            - -action
+            - single
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+      restartPolicy: Always

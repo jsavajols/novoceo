@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# start-z2m.sh - Lance Zigbee2MQTT avec relance automatique en cas d'erreur
+
+export PATH=$HOME/.local/bin:$PATH
+
+DELAY=5   # secondes avant relance
+
+echo "[z2m] Démarrage de Zigbee2MQTT (relance automatique activée)"
+echo "[z2m] Ctrl+C pour arrêter"
+echo ""
+
+while true; do
+    ZIGBEE2MQTT_DATA=/var/lib/zigbee2mqtt node /opt/zigbee2mqtt/index.js
+    EXIT_CODE=$?
+    echo ""
+    echo "[z2m] Arrêt (code: $EXIT_CODE) - relance dans ${DELAY}s... (Ctrl+C pour stopper)"
+    sleep $DELAY
+done

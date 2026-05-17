@@ -1,0 +1,18 @@
+[Unit]
+Description=Zigbee2MQTT
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jerome
+Environment=ZIGBEE2MQTT_DATA=/var/lib/zigbee2mqtt
+ExecStart=/usr/bin/node /opt/zigbee2mqtt/index.js
+WorkingDirectory=/opt/zigbee2mqtt
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

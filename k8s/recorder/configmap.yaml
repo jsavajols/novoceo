@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recorder-config
+  namespace: novoceo
+data:
+  MQTT_BROKER: "tcp://mosquitto:1883"
+  DB_HOST: "51.159.109.144"
+  DB_PORT: "30015"
+  DB_NAME: "novoceo"
