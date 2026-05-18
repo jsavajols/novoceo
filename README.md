@@ -54,6 +54,31 @@ graph LR
 | **monitor** | Dashboard ANSI terminal (dev) | — | — |
 | **send-device** | CLI one-shot pour envoyer une commande | — | — |
 
+## Raspberry Pi
+
+Le RPi fait tourner Zigbee2MQTT. Les scripts de gestion sont dans `rpi/`.
+
+### Sauvegarde de la carte SD
+
+Brancher la carte SD sur le laptop, puis :
+
+```bash
+# Détecter le périphérique
+sudo ./rpi/backup-sd.sh detect
+
+# Sauvegarder
+sudo ./rpi/backup-sd.sh backup /dev/sdb
+
+# Lister les sauvegardes (3 dernières conservées)
+sudo ./rpi/backup-sd.sh list
+
+# Restaurer
+sudo ./rpi/backup-sd.sh restore /dev/sdb
+```
+
+Les sauvegardes sont stockées dans `rpi/backups/` (exclu de git), au format `rpi_sd_YYYYMMDD_HHMMSS.img.gz`.
+Installer `pv` pour une barre de progression avec vitesse et ETA.
+
 ## Domaines exposés (k3s + Ingress nginx + TLS)
 
 - Dashboard web : `https://novoceo.front.local.happyapi.fr`
