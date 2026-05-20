@@ -53,57 +53,7 @@ graph LR
 | **mobile** | App Android React Native / Expo | — | — |
 | **monitor** | Dashboard ANSI terminal (dev) | — | — |
 | **send-device** | CLI one-shot pour envoyer une commande | — | — |
-
-## Raspberry Pi
-
-Le RPi fait tourner Zigbee2MQTT. Les scripts de gestion sont dans `rpi/`.
-
-### Sauvegarde de la carte SD
-
-Brancher la carte SD sur le laptop, puis :
-
-```bash
-# Détecter le périphérique
-sudo ./rpi/backup-sd.sh detect
-
-# Sauvegarder
-sudo ./rpi/backup-sd.sh backup /dev/sdb
-
-# Lister les sauvegardes (3 dernières conservées)
-sudo ./rpi/backup-sd.sh list
-
-# Restaurer
-sudo ./rpi/backup-sd.sh restore /dev/sdb
-```
-
-Les sauvegardes sont stockées dans `rpi/backups/` (exclu de git), au format `rpi_sd_YYYYMMDD_HHMMSS.img.gz`.
-Installer `pv` pour une barre de progression avec vitesse et ETA.
-
-### Watchdog réseau
-
-`rpi/watchdog-net.sh` tourne chaque minute via systemd timer. Il envoie 10 pings vers `8.8.8.8` et déclenche un `reboot -f` si le taux de perte dépasse 50%.
-
-Le service tourne en root avec `CapabilityBoundingSet=CAP_SYS_BOOT CAP_NET_RAW` et `NoNewPrivileges=yes` - seules les capabilities nécessaires sont accordées.
-
-**Déploiement sur le RPi :**
-
-```bash
-sudo mkdir -p /opt/novoceo
-sudo cp rpi/watchdog-net.sh /opt/novoceo/watchdog-net.sh
-sudo chmod 700 /opt/novoceo/watchdog-net.sh
-sudo chown root:root /opt/novoceo/watchdog-net.sh
-
-sudo cp rpi/watchdog-net.service rpi/watchdog-net.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now watchdog-net.timer
-```
-
-**Vérification et logs :**
-
-```bash
-systemctl status watchdog-net.timer
-journalctl -u watchdog-net.service -f
-```
+| **RPi novoceo-os** | Zigbee2MQTT + scripts de maintenance | — | — |
 
 ## Domaines exposés (k3s + Ingress nginx + TLS)
 
