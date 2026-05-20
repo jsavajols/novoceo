@@ -3,6 +3,7 @@
 ## Diagramme d'architecture
 
 ```mermaid
+%%{init: {'theme': 'neutral'}}%%
 graph TB
     subgraph rpi["RPi novoceo-os"]
         direction TB
@@ -59,25 +60,26 @@ graph TB
     INGRESS -- "novoceo.front.local.happyapi.fr" --> FRONT
     INGRESS -- "novoceo.api.local.happyapi.fr"   --> API
 
-    style rpi      fill:#1e293b,stroke:#475569,color:#cbd5e1
-    style k3s      fill:#0f172a,stroke:#334155,color:#94a3b8
-    style ext      fill:#0f172a,stroke:#334155,color:#94a3b8
-    style devices  fill:#1e293b,stroke:#334155,color:#94a3b8
-    style consumers fill:#1e293b,stroke:#334155,color:#94a3b8
-    style web      fill:#1e293b,stroke:#334155,color:#94a3b8
+    style rpi      fill:#eff6ff,stroke:#93c5fd,color:#1e3a5f
+    style k3s      fill:#f0fdf4,stroke:#86efac,color:#14532d
+    style ext      fill:#faf5ff,stroke:#d8b4fe,color:#581c87
+    style devices  fill:#dbeafe,stroke:#93c5fd,color:#1e3a5f
+    style consumers fill:#fef9c3,stroke:#fcd34d,color:#78350f
+    style web      fill:#dcfce7,stroke:#86efac,color:#14532d
     style MOSQ     fill:#0e7490,stroke:#06b6d4,color:#fff
     style Z2M      fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style WDG      fill:#475569,stroke:#94a3b8,color:#fff
     style SNUG     fill:#065f46,stroke:#10b981,color:#fff
     style REC      fill:#92400e,stroke:#f59e0b,color:#fff
     style API      fill:#1e40af,stroke:#3b82f6,color:#fff
     style FRONT    fill:#1e40af,stroke:#3b82f6,color:#fff
     style DB       fill:#581c87,stroke:#a855f7,color:#fff
-    style DONGLE   fill:#374151,stroke:#6b7280,color:#d1d5db
-    style BOUTON   fill:#374151,stroke:#6b7280,color:#d1d5db
-    style PRISE    fill:#374151,stroke:#6b7280,color:#d1d5db
-    style TEMP     fill:#374151,stroke:#6b7280,color:#d1d5db
-    style BROWSER  fill:#374151,stroke:#6b7280,color:#d1d5db
-    style INGRESS  fill:#374151,stroke:#6b7280,color:#d1d5db
+    style DONGLE   fill:#e2e8f0,stroke:#94a3b8,color:#334155
+    style BOUTON   fill:#e2e8f0,stroke:#94a3b8,color:#334155
+    style PRISE    fill:#e2e8f0,stroke:#94a3b8,color:#334155
+    style TEMP     fill:#e2e8f0,stroke:#94a3b8,color:#334155
+    style BROWSER  fill:#e2e8f0,stroke:#94a3b8,color:#334155
+    style INGRESS  fill:#e2e8f0,stroke:#94a3b8,color:#334155
 ```
 
 ## Topologie réseau (ASCII)
