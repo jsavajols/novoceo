@@ -124,6 +124,8 @@ chmod 700 /opt/novoceo/watchdog-net.sh
 
 ### Installation sur le RPi
 
+`mosquitto-clients` doit être installé sur le RPi avant de déployer le script (voir [docs/rpi-os.md](rpi-os.md)).
+
 ```bash
 # Depuis le laptop, copier les fichiers
 scp rpi/watchdog-net.sh rpi/watchdog-net.service rpi/watchdog-net.timer pi@<IP_RPI>:/tmp/
