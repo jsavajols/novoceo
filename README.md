@@ -118,3 +118,4 @@ journalctl -u watchdog-net.service -f
 - [Déploiement Kubernetes](docs/kubernetes.md)
 - [Développement local](docs/dev.md)
 - [Base de données](docs/database.md)
+- [Raspberry Pi - Administration et maintenance](docs/rpi.md)
