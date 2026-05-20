@@ -186,6 +186,24 @@ Pour surveiller en temps réel depuis le laptop :
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
 ```
 
+### Test du watchdog
+
+Simuler une perte de connectivité sans iptables (route blackhole) :
+
+```bash
+# Bloquer 8.8.8.8
+sudo ip route add blackhole 8.8.8.8/32
+
+# Débloquer
+sudo ip route del blackhole 8.8.8.8/32
+```
+
+Surveiller le témoin MQTT pendant le test :
+
+```bash
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
+```
+
 ### Vérification et logs
 
 ```bash
