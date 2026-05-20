@@ -30,8 +30,8 @@ func (a *app) htmxContact(c *fiber.Ctx) error {
 	bat := ""
 	if d.Battery != nil {
 		bat = fmt.Sprintf(
-			`<div><p class="font-mono text-xs text-slate-500 mb-0.5">batterie</p>`+
-				`<p class="font-mono text-sm text-green-300">%d%%</p></div>`,
+			`<div><p class="font-mono text-base text-slate-500 mb-0.5">batterie</p>`+
+				`<p class="font-mono text-base text-green-300">%d%%</p></div>`,
 			*d.Battery,
 		)
 	}
@@ -40,12 +40,12 @@ func (a *app) htmxContact(c *fiber.Ctx) error {
   <div class="flex flex-col items-center gap-3 py-2">
     <div class="relative">
       <div class="h-24 w-24 rounded-full bg-slate-800 border-2 border-slate-700 %s flex items-center justify-center transition-all duration-700">
-        <span class="font-mono text-sm font-medium tracking-tight %s">%s</span>
+        <span class="font-mono text-base font-medium tracking-tight %s">%s</span>
       </div>
       <span class="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-slate-900 %s"></span>
     </div>
     %s
-    <p class="font-mono text-xs text-slate-700">%s</p>
+    <p class="font-mono text-xs text-slate-500">%s</p>
   </div>
 </div>`,
 		glowClass, textColor, label, dotColor,

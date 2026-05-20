@@ -80,18 +80,18 @@ func (a *app) htmxTemperature(c *fiber.Ctx) error {
 	if svg, minT, maxT := sparklineSVG(history); svg != "" {
 		chart = `<div class="border-t border-slate-800 pt-3 space-y-1.5">` +
 			`<div class="flex justify-between items-center">` +
-			`<span class="font-mono text-xs text-slate-500">24 dernières heures</span>` +
-			fmt.Sprintf(`<span class="font-mono text-xs text-amber-800">↓%.1f° ↑%.1f°</span>`, minT, maxT) +
+			`<span class="font-mono text-base text-slate-500">24 dernières heures</span>` +
+			fmt.Sprintf(`<span class="font-mono text-base text-amber-400">↓%.1f° ↑%.1f°</span>`, minT, maxT) +
 			`</div>` +
 			svg +
 			`<div class="flex justify-between">` +
-			`<span class="font-mono text-xs text-slate-700">-24h</span>` +
-			`<span class="font-mono text-xs text-slate-700">now</span>` +
+			`<span class="font-mono text-base text-slate-500">-24h</span>` +
+			`<span class="font-mono text-base text-slate-500">now</span>` +
 			`</div></div>`
 	} else {
 		chart = `<div class="border-t border-slate-800 pt-3">` +
-			`<p class="font-mono text-xs text-slate-500 mb-1">24 dernières heures</p>` +
-			`<p class="font-mono text-xs text-slate-700">aucune donnée</p></div>`
+			`<p class="font-mono text-base text-slate-500 mb-1">24 dernières heures</p>` +
+			`<p class="font-mono text-sm text-slate-500">aucune donnée</p></div>`
 	}
 
 	html := fmt.Sprintf(`<div class="space-y-4">
@@ -101,16 +101,16 @@ func (a *app) htmxTemperature(c *fiber.Ctx) error {
   </div>
   <div class="flex gap-5">
     <div>
-      <p class="font-mono text-xs text-slate-500 mb-0.5">humidité</p>
-      <p class="font-mono text-sm text-blue-300">%.0f%%</p>
+      <p class="font-mono text-base text-slate-500 mb-0.5">humidité</p>
+      <p class="font-mono text-base text-blue-300">%.0f%%</p>
     </div>
     <div>
-      <p class="font-mono text-xs text-slate-500 mb-0.5">batterie</p>
-      <p class="font-mono text-sm text-green-300">%d%%</p>
+      <p class="font-mono text-base text-slate-500 mb-0.5">batterie</p>
+      <p class="font-mono text-base text-green-300">%d%%</p>
     </div>
   </div>
   %s
-  <p class="font-mono text-xs text-slate-700">%s</p>
+  <p class="font-mono text-xs text-slate-500">%s</p>
 </div>`,
 		pf(d.Temperature),
 		pf(d.Humidity),

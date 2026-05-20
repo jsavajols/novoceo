@@ -25,6 +25,25 @@ Le bouton **Toggle** de la carte Prise appelle `POST /device/command` puis rafra
 
 Un **pull-to-refresh** (tirer vers le bas) force le rechargement de toutes les cartes simultanément.
 
+## Thème (clair / sombre / système)
+
+L'application embarque un sélecteur de thème à trois états accessible depuis le header.
+
+| Mode | Comportement |
+|------|-------------|
+| `☀ clair` | Fond `#f1f5f9`, cartes blanches tintées, textes sombres |
+| `◑ système` | Suit `prefers-color-scheme` de l'OS (défaut au démarrage) |
+| `☾ sombre` | Fond `#020617`, cartes navy, textes clairs |
+
+Le choix est conservé en mémoire pendant la session ; l'application repart toujours sur le mode système au prochain lancement.
+
+### Architecture thème
+
+- `ThemeProvider` / `ThemeContext` — wrapper racine exposant `{ mode, setMode, colors, dark, s }` via `useTheme()`
+- `DARK` / `LIGHT` — deux objets `Palette` complets (couleurs de fond, accent, texte, état des widgets)
+- `makeStyles(palette)` — génère le `StyleSheet` complet ; wrappé dans `useMemo`, ne se recalcule qu'au changement de thème
+- Toutes les couleurs d'accent (titres de cartes, états ON/OFF, FERMÉ/OUVERT) passent par la palette — aucune couleur codée en dur dans les composants
+
 ## Configuration
 
 L'URL de l'API et le token Bearer sont des constantes en haut de `mobile/App.tsx` :

@@ -37,13 +37,13 @@ func (a *app) renderPrise(c *fiber.Ctx) error {
       </div>
       <span class="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-slate-900 %s"></span>
     </div>
-    <p class="font-mono text-xs text-slate-700">%s</p>
+    <p class="font-mono text-xs text-slate-500">%s</p>
   </div>
   <button
     hx-post="/htmx/toggle"
     hx-target="#prise-content"
     hx-swap="innerHTML"
-    class="w-full py-2.5 rounded-xl font-mono text-sm font-medium bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 hover:border-slate-600 text-slate-300 transition-all duration-150 cursor-pointer">
+    class="w-full py-2.5 rounded-xl font-mono text-base font-medium bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 hover:border-slate-600 text-slate-300 transition-all duration-150 cursor-pointer">
     Toggle
   </button>
 </div>`,
