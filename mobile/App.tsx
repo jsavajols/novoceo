@@ -231,7 +231,7 @@ function makeStyles(c: Palette) {
     logoNovo: { fontWeight: '700', fontSize: 20, color: c.logoColor, letterSpacing: -0.8 },
     logoSub: { fontSize: 8, color: c.logoSub, letterSpacing: 5 },
     logoDash: { height: 1, width: 16, backgroundColor: '#2563eb' },
-    statusDot: { height: 8, width: 8, borderRadius: 4, backgroundColor: '#34d399' },
+    statusDot: { height: 12, width: 12, borderRadius: 6, backgroundColor: '#34d399' },
 
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     themePill: {
@@ -725,10 +725,27 @@ export default function App() {
   );
 }
 
+type WatchdogData = { loss: number; created_at: string; ok: boolean };
+
 function AppInner() {
   const [refreshing, setRefreshing] = useState(false);
   const [key, setKey] = useState(0);
+  const [watchdogOK, setWatchdogOK] = useState<boolean | null>(null);
   const { s, dark } = useTheme();
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const data = await apiFetch<WatchdogData>('/watchdog');
+        setWatchdogOK(data.ok);
+      } catch {
+        setWatchdogOK(false);
+      }
+    };
+    check();
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -759,7 +776,7 @@ function AppInner() {
           </View>
           <View style={s.headerRight}>
             <ThemeSelector />
-            <View style={s.statusDot} />
+            <View style={[s.statusDot, { backgroundColor: watchdogOK === false ? '#ef4444' : '#34d399' }]} />
           </View>
         </View>
 

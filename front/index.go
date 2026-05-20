@@ -115,7 +115,7 @@ const indexHTML = `<!DOCTYPE html>
       <button class="theme-pill" id="btn-light"  onclick="setTheme('light')"  title="Mode clair">&#9728;</button>
       <button class="theme-pill" id="btn-system" onclick="setTheme('system')" title="Mode système">&#9680;</button>
       <button class="theme-pill" id="btn-dark"   onclick="setTheme('dark')"   title="Mode sombre">&#9790;</button>
-      <span class="ml-1 h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span id="watchdog-dot" hx-get="/htmx/watchdog" hx-trigger="load, every 60s" hx-swap="outerHTML" class="ml-1 h-3 w-3 rounded-full bg-slate-700 animate-pulse" title="RPi..."></span>
     </div>
   </header>
 

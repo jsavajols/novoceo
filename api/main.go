@@ -163,6 +163,39 @@ func (a *application) getTemperatureHistory(c *fiber.Ctx) error {
 	return c.JSON(points)
 }
 
+// --- GET /watchdog ---
+
+type watchdogResponse struct {
+	Loss      int       `json:"loss"`
+	CreatedAt time.Time `json:"created_at"`
+	OK        bool      `json:"ok"`
+}
+
+const queryWatchdog = `
+SELECT
+    (device_state->>'loss')::int AS loss,
+    created_at
+FROM states
+WHERE topic = 'rpi/watchdog-net'
+  AND device_state->>'event' = 'heartbeat'
+ORDER BY id DESC
+LIMIT 1`
+
+func (a *application) getWatchdog(c *fiber.Ctx) error {
+	var loss int
+	var createdAt time.Time
+	row := a.db.QueryRow(context.Background(), queryWatchdog)
+	err := row.Scan(&loss, &createdAt)
+	if err == pgx.ErrNoRows {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "aucune donnée"})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	ok := loss <= 50 && time.Since(createdAt) <= 5*time.Minute
+	return c.JSON(watchdogResponse{Loss: loss, CreatedAt: createdAt, OK: ok})
+}
+
 // --- GET /bridge/health ---
 
 type healthResponse struct {
@@ -355,6 +388,7 @@ func main() {
 	f.Get("/device/:device/state", a.getDeviceState)
 	f.Get("/sensor/temperature", a.getTemperature)
 	f.Get("/sensor/temperature/history", a.getTemperatureHistory)
+	f.Get("/watchdog", a.getWatchdog)
 	f.Get("/bridge/health", a.getBridgeHealth)
 
 	log("démarrée sur :%s", port)

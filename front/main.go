@@ -128,6 +128,7 @@ func main() {
 	f.Get("/", func(c *fiber.Ctx) error {
 		return c.Type("html").SendString(indexHTML)
 	})
+	f.Get("/htmx/watchdog", a.htmxWatchdog)
 	f.Get("/htmx/health", a.htmxHealth)
 	f.Get("/htmx/temperature", a.htmxTemperature)
 	f.Get("/htmx/prise", a.htmxPrise)
