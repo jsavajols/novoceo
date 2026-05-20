@@ -93,7 +93,11 @@ sudo chmod +x /opt/novoceo/watchdog-net.sh
 echo '* * * * * root /opt/novoceo/watchdog-net.sh' | sudo tee /etc/cron.d/watchdog-net
 ```
 
-Les logs sont dans `/var/log/watchdog-net.log`.
+Les logs sont dans `/var/log/watchdog-net.log` (rotation quotidienne, 7 jours, via logrotate).
+
+```bash
+sudo cp rpi/watchdog-net.logrotate /etc/logrotate.d/watchdog-net
+```
 
 ## Domaines exposés (k3s + Ingress nginx + TLS)
 
