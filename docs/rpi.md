@@ -163,6 +163,27 @@ sudo chcon -t bin_t /opt/novoceo/watchdog-net.sh
 
 A retenir : toujours relabeler les fichiers copiés depuis `/tmp/` vers `/opt/` sur un système SELinux.
 
+### Notifications MQTT
+
+A chaque exécution, le script publie un heartbeat sur le broker MQTT central :
+
+| Event | Condition | Payload |
+|-------|-----------|---------|
+| `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N}` |
+| `reboot` | Avant reboot (perte > 50%) | `{"event":"reboot","loss":N}` |
+
+- Broker : `192.168.1.128:32500`
+- Topic : `rpi/watchdog-net`
+- QoS : 0 (best-effort, le `|| true` garantit que le script ne bloque pas si le broker est injoignable)
+
+Le recorder souscrit à `rpi/#` et persiste ces messages dans PostgreSQL comme les états Zigbee.
+
+Pour surveiller en temps réel depuis le laptop :
+
+```bash
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
+```
+
 ### Vérification et logs
 
 ```bash

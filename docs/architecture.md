@@ -8,6 +8,7 @@ graph TB
         direction TB
         DONGLE["🔌 Dongle Zigbee USB"]
         Z2M["zigbee2mqtt\nbase_topic: zigbee2mqtt/novoceo-os"]
+        WDG["watchdog-net\npublish rpi/watchdog-net"]
         DONGLE --> Z2M
 
         subgraph devices["Devices Zigbee"]
@@ -28,7 +29,7 @@ graph TB
 
         subgraph consumers["Consommateurs MQTT"]
             SNUG["snug\nBouton → TOGGLE Prise"]
-            REC["recorder\nzigbee2mqtt/# → PostgreSQL"]
+            REC["recorder\nzigbee2mqtt/# + rpi/# → PostgreSQL"]
         end
 
         subgraph web["Couche web"]
@@ -51,6 +52,7 @@ graph TB
     end
 
     Z2M  -- "MQTT TCP :32500" --> MOSQ
+    WDG  -- "MQTT TCP :32500" --> MOSQ
     SNUG -- "MQTT TOGGLE /set" --> MOSQ
 
     BROWSER --> INGRESS
@@ -91,6 +93,15 @@ zigbee2mqtt/<rpi>/bridge/devices  # liste des devices Zigbee du RPi
 zigbee2mqtt/<rpi>/bridge/health   # état de santé du bridge
 zigbee2mqtt/bridge/health         # santé du bridge local (si zigbee2mqtt local)
 ```
+
+Le watchdog réseau publie sur un topic distinct :
+
+```
+rpi/watchdog-net                  # heartbeat toutes les minutes + event reboot
+```
+
+Payload heartbeat : `{"event":"heartbeat","loss":N}` (N = % paquets perdus)
+Payload reboot : `{"event":"reboot","loss":N}`
 
 ### Appuyer sur le bouton — flux complet
 

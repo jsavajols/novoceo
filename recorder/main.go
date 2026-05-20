@@ -148,6 +148,11 @@ func connectMQTT(cfg config, pool *pgxpool.Pool) mqtt.Client {
 			} else {
 				log("abonné à zigbee2mqtt/#")
 			}
+			if token := c.Subscribe("rpi/#", 1, handler); token.Wait() && token.Error() != nil {
+				logErr("subscribe échoué : %v", token.Error())
+			} else {
+				log("abonné à rpi/#")
+			}
 		}).
 		SetConnectionLostHandler(func(_ mqtt.Client, err error) {
 			logErr("connexion MQTT perdue : %v — reconnexion automatique...", err)
