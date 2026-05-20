@@ -1,0 +1,18 @@
+[Unit]
+Description=Watchdog réseau - reboot si connectivité dégradée
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/novoceo/watchdog-net.sh
+User=root
+
+# Restreint aux seules capabilities nécessaires
+CapabilityBoundingSet=CAP_SYS_BOOT CAP_NET_RAW
+NoNewPrivileges=yes
+
+# Logs vers journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=watchdog-net

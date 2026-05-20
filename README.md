@@ -81,22 +81,28 @@ Installer `pv` pour une barre de progression avec vitesse et ETA.
 
 ### Watchdog réseau
 
-`rpi/watchdog-net.sh` tourne chaque minute via cron. Il envoie 10 pings vers `8.8.8.8` et déclenche un `reboot -f` si le taux de perte dépasse 50%.
+`rpi/watchdog-net.sh` tourne chaque minute via systemd timer. Il envoie 10 pings vers `8.8.8.8` et déclenche un `reboot -f` si le taux de perte dépasse 50%.
+
+Le service tourne en root avec `CapabilityBoundingSet=CAP_SYS_BOOT CAP_NET_RAW` et `NoNewPrivileges=yes` - seules les capabilities nécessaires sont accordées.
 
 **Déploiement sur le RPi :**
 
 ```bash
+sudo mkdir -p /opt/novoceo
 sudo cp rpi/watchdog-net.sh /opt/novoceo/watchdog-net.sh
-sudo chmod +x /opt/novoceo/watchdog-net.sh
+sudo chmod 700 /opt/novoceo/watchdog-net.sh
+sudo chown root:root /opt/novoceo/watchdog-net.sh
 
-# Ajouter dans /etc/cron.d/watchdog-net
-echo '* * * * * root /opt/novoceo/watchdog-net.sh' | sudo tee /etc/cron.d/watchdog-net
+sudo cp rpi/watchdog-net.service rpi/watchdog-net.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now watchdog-net.timer
 ```
 
-Les logs sont dans `/var/log/watchdog-net.log` (rotation quotidienne, 7 jours, via logrotate).
+**Vérification et logs :**
 
 ```bash
-sudo cp rpi/watchdog-net.logrotate /etc/logrotate.d/watchdog-net
+systemctl status watchdog-net.timer
+journalctl -u watchdog-net.service -f
 ```
 
 ## Domaines exposés (k3s + Ingress nginx + TLS)
