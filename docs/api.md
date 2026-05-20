@@ -118,6 +118,28 @@ Historique des températures sur les 24 dernières heures, agrégées par tranch
 Retourne un tableau vide `[]` si aucune donnée dans les dernières 24h.
 Maximum 96 points (4 par heure × 24h).
 
+### GET /watchdog
+
+Dernier heartbeat du watchdog réseau du RPi.
+
+```json
+{
+  "loss": 0,
+  "created_at": "2026-05-20T16:42:00Z",
+  "ok": true
+}
+```
+
+- `loss` : pourcentage de paquets perdus lors du dernier ping
+- `ok` : `false` si `loss > 50` ou si la dernière mesure date de plus de 5 minutes
+
+```bash
+curl -s https://novoceo.api.local.happyapi.fr/watchdog \
+  -H "Authorization: Bearer <API_TOKEN>" | jq
+```
+
+Retourne `404` si aucun heartbeat n'a encore été enregistré.
+
 ### GET /bridge/health
 
 Dernier état de santé du bridge Zigbee2MQTT (charge CPU, mémoire).

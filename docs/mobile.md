@@ -25,6 +25,17 @@ Le bouton **Toggle** de la carte Prise appelle `POST /device/command` puis rafra
 
 Un **pull-to-refresh** (tirer vers le bas) force le rechargement de toutes les cartes simultanément.
 
+## Témoin RPi (header)
+
+Un cercle de 12px dans le header indique l'état de connectivité du RPi en temps réel.
+
+| Couleur | Signification |
+|---------|--------------|
+| Vert `#34d399` | RPi joignable, perte de paquets <= 50% |
+| Rouge `#ef4444` | Perte > 50%, heartbeat > 5 min, ou API injoignable |
+
+L'app appelle `GET /watchdog` au démarrage puis toutes les 60 secondes. Pendant le premier chargement, le témoin est vert par défaut.
+
 ## Thème (clair / sombre / système)
 
 L'application embarque un sélecteur de thème à trois états accessible depuis le header.
