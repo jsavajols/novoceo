@@ -79,6 +79,22 @@ sudo ./rpi/backup-sd.sh restore /dev/sdb
 Les sauvegardes sont stockées dans `rpi/backups/` (exclu de git), au format `rpi_sd_YYYYMMDD_HHMMSS.img.gz`.
 Installer `pv` pour une barre de progression avec vitesse et ETA.
 
+### Watchdog réseau
+
+`rpi/watchdog-net.sh` tourne chaque minute via cron. Il envoie 10 pings vers `8.8.8.8` et déclenche un `reboot -f` si le taux de perte dépasse 50%.
+
+**Déploiement sur le RPi :**
+
+```bash
+sudo cp rpi/watchdog-net.sh /opt/novoceo/watchdog-net.sh
+sudo chmod +x /opt/novoceo/watchdog-net.sh
+
+# Ajouter dans /etc/cron.d/watchdog-net
+echo '* * * * * root /opt/novoceo/watchdog-net.sh' | sudo tee /etc/cron.d/watchdog-net
+```
+
+Les logs sont dans `/var/log/watchdog-net.log`.
+
 ## Domaines exposés (k3s + Ingress nginx + TLS)
 
 - Dashboard web : `https://novoceo.front.local.happyapi.fr`
