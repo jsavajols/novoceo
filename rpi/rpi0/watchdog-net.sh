@@ -2,6 +2,8 @@
 # watchdog-net.sh - Reboot si la connectivité réseau est dégradée
 # Planifié via cron toutes les minutes (watchdog-net.crontab)
 
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
 TARGET="8.8.8.8"
 COUNT=10
 THRESHOLD=50  # % d'erreurs au-delà duquel on reboot
