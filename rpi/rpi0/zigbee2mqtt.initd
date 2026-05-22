@@ -3,10 +3,8 @@
 supervisor=supervise-daemon
 description="Zigbee2MQTT"
 
-command="/usr/bin/node"
-command_args="/opt/zigbee2mqtt/index.js"
+command="/usr/bin/zigbee2mqtt"
 command_user="jerome:jerome"
-directory="/opt/zigbee2mqtt"
 
 export ZIGBEE2MQTT_DATA="/var/lib/zigbee2mqtt"
 
