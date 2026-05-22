@@ -1,0 +1,23 @@
+#!/sbin/openrc-run
+
+supervisor=supervise-daemon
+description="Zigbee2MQTT"
+
+command="/usr/bin/node"
+command_args="/opt/zigbee2mqtt/index.js"
+command_user="jerome:jerome"
+directory="/opt/zigbee2mqtt"
+
+export ZIGBEE2MQTT_DATA="/var/lib/zigbee2mqtt"
+
+output_log="/var/log/zigbee2mqtt/zigbee2mqtt.log"
+error_log="/var/log/zigbee2mqtt/zigbee2mqtt.log"
+
+depend() {
+    need net
+}
+
+start_pre() {
+    checkpath --directory --owner jerome:jerome --mode 0755 /var/log/zigbee2mqtt
+    checkpath --directory --owner jerome:jerome --mode 0755 /var/lib/zigbee2mqtt
+}

@@ -1,11 +1,70 @@
 # Raspberry Pi - Administration et maintenance
 
-Le RPi `novoceo-os` héberge Zigbee2MQTT et fait le pont entre les appareils Zigbee et le broker MQTT sur k3s. Ce document couvre les scripts de maintenance installés sur le RPi.
+Deux RPi sont utilisés dans le projet :
+
+- `novoceo-os` (RPi 3) : héberge Zigbee2MQTT sous openSUSE MicroOS avec systemd
+- RPi Zero 2W : variante légère sous Alpine Linux avec OpenRC
 
 ## Sommaire
 
+- [Zigbee2MQTT sur RPi Zero 2W (Alpine Linux)](#zigbee2mqtt-sur-rpi-zero-2w-alpine-linux)
 - [Sauvegarde de la carte SD](#sauvegarde-de-la-carte-sd)
 - [Watchdog réseau](#watchdog-réseau)
+
+---
+
+## Zigbee2MQTT sur RPi Zero 2W (Alpine Linux)
+
+### Contexte
+
+Le RPi Zero 2W tourne sous Alpine Linux qui utilise **OpenRC** comme système d'init (pas systemd). Le service est défini dans `rpi/rpi0/zigbee2mqtt.initd`.
+
+### Differences avec le RPi3
+
+| | RPi3 (openSUSE MicroOS) | RPi Zero 2W (Alpine Linux) |
+|---|---|---|
+| Init system | systemd | OpenRC |
+| Fichier service | `rpi/rpi3/zigbee2mqtt.service` | `rpi/rpi0/zigbee2mqtt.initd` |
+| Restart on failure | `Restart=on-failure` | `supervisor=supervise-daemon` |
+| Logs | journald | fichier `/var/log/zigbee2mqtt/` |
+| Network dependency | `After=network-online.target` | `need net` |
+
+### Installation sur le RPi Zero 2W
+
+```bash
+# Copier le fichier init depuis le laptop
+scp rpi/rpi0/zigbee2mqtt.initd jerome@<IP_RPI0>:/tmp/
+
+# Sur le RPi Zero 2W
+doas cp /tmp/zigbee2mqtt.initd /etc/init.d/zigbee2mqtt
+doas chmod +x /etc/init.d/zigbee2mqtt
+
+# Activer au demarrage et demarrer
+doas rc-update add zigbee2mqtt default
+doas rc-service zigbee2mqtt start
+```
+
+### Gestion du service
+
+```bash
+# Etat
+rc-service zigbee2mqtt status
+
+# Demarrer / arreter / redemarrer
+doas rc-service zigbee2mqtt start
+doas rc-service zigbee2mqtt stop
+doas rc-service zigbee2mqtt restart
+
+# Logs
+tail -f /var/log/zigbee2mqtt/zigbee2mqtt.log
+
+# Desactiver le demarrage automatique
+doas rc-update del zigbee2mqtt default
+```
+
+### Supervision automatique
+
+`supervisor=supervise-daemon` dans le fichier init indique a OpenRC d'utiliser son daemon de supervision integre. Il relance automatiquement le process en cas d'arret inopiné, equivalent au `Restart=on-failure` de systemd.
 
 ---
 
