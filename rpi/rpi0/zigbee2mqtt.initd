@@ -4,7 +4,7 @@ supervisor=supervise-daemon
 description="Zigbee2MQTT"
 
 command="/usr/bin/zigbee2mqtt"
-export ZIGBEE2MQTT_DATA="/var/lib/zigbee2mqtt"
+export ZIGBEE2MQTT_DATA="/home/jerome/data"
 
 supervise_daemon_args="--stdout /var/log/zigbee2mqtt/zigbee2mqtt.log --stderr /var/log/zigbee2mqtt/zigbee2mqtt.log"
 
@@ -14,5 +14,4 @@ depend() {
 
 start_pre() {
     checkpath --directory --owner root:root --mode 0755 /var/log/zigbee2mqtt
-    checkpath --directory --owner root:root --mode 0755 /var/lib/zigbee2mqtt
 }
