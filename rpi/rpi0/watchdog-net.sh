@@ -11,7 +11,7 @@ MQTT_PORT="32500"
 MQTT_TOPIC="rpi/watchdog-net"
 
 lost=$(ping -c "$COUNT" -q "$TARGET" 2>/dev/null \
-    | awk '/packets transmitted/ { gsub(/%/,"",$6); print $6 }')
+    | grep -oE '[0-9]+%' | tr -d '%')
 
 if [ -z "$lost" ]; then
     echo "ERREUR: ping injoignable ou sortie inattendue"
