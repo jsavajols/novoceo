@@ -10,8 +10,7 @@ directory="/opt/zigbee2mqtt"
 
 export ZIGBEE2MQTT_DATA="/var/lib/zigbee2mqtt"
 
-output_log="/var/log/zigbee2mqtt/zigbee2mqtt.log"
-error_log="/var/log/zigbee2mqtt/zigbee2mqtt.log"
+supervise_daemon_args="--stdout /var/log/zigbee2mqtt/zigbee2mqtt.log --stderr /var/log/zigbee2mqtt/zigbee2mqtt.log"
 
 depend() {
     need net
