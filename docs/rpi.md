@@ -149,8 +149,8 @@ cp /tmp/watchdog-net.sh /opt/novoceo/
 chown root:root /opt/novoceo/watchdog-net.sh
 chmod 700 /opt/novoceo/watchdog-net.sh
 
-# Installer l'entree cron
-cat /tmp/watchdog-net.crontab >> /etc/crontabs/root
+# Installer l'entree cron (la redirection >> doit passer par sh -c, pas doas directement)
+doas sh -c 'cat /tmp/watchdog-net.crontab >> /etc/crontabs/root'
 
 # Installer la rotation des logs
 cp /tmp/watchdog-net.logrotate /etc/logrotate.d/watchdog-net
@@ -158,7 +158,12 @@ cp /tmp/watchdog-net.logrotate /etc/logrotate.d/watchdog-net
 # Activer et démarrer crond si pas déjà fait
 rc-update add crond default
 rc-service crond start
+
+# Redemarrer crond pour qu'il relise /etc/crontabs/root
+rc-service crond restart
 ```
+
+> crond busybox ne relit pas le crontab à chaud - tout ajout ou modification nécessite un `rc-service crond restart`.
 
 ### Vérification
 
