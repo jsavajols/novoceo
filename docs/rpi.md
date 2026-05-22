@@ -19,20 +19,48 @@ Deux RPi sont utilisés dans le projet :
 
 Le RPi Zero 2W tourne sous Alpine Linux qui utilise **OpenRC** comme système d'init (pas systemd). Le service est défini dans `rpi/rpi0/zigbee2mqtt.initd`.
 
+Zigbee2MQTT est installé via le gestionnaire de paquets Alpine (`apk`), le binaire est donc à `/usr/bin/zigbee2mqtt`. Le fichier de configuration se trouve dans `/root/.z2m/configuration.yaml` et le service tourne en root (nécessaire pour l'accès au port série du dongle Zigbee).
+
 ### Differences avec le RPi3
 
 | | RPi3 (openSUSE MicroOS) | RPi Zero 2W (Alpine Linux) |
 |---|---|---|
 | Init system | systemd | OpenRC |
 | Fichier service | `rpi/rpi3/zigbee2mqtt.service` | `rpi/rpi0/zigbee2mqtt.initd` |
+| Installation z2m | manuelle (`/opt/zigbee2mqtt`) | `apk add zigbee2mqtt` |
+| Config z2m | `ZIGBEE2MQTT_DATA` | `/root/.z2m/` |
 | Restart on failure | `Restart=on-failure` | `supervisor=supervise-daemon` |
-| Logs | journald | fichier `/var/log/zigbee2mqtt/` |
+| Logs | journald | `/var/log/zigbee2mqtt/zigbee2mqtt.log` |
 | Network dependency | `After=network-online.target` | `need net` |
+| Privilege escalation | `sudo` | `doas` (groupe `wheel`) |
 
-### Installation sur le RPi Zero 2W
+### Prérequis : configurer doas
+
+Sur Alpine, `doas` requiert une configuration explicite. Vérifier que jerome est dans le groupe `wheel` et que la règle est activée :
 
 ```bash
-# Copier le fichier init depuis le laptop
+# En root (su -)
+id jerome   # verifier la presence de wheel dans les groupes
+# Si absent : adduser jerome wheel
+
+# Activer la regle wheel dans doas
+sed -i 's/^# permit persist :wheel/permit persist :wheel/' /etc/doas.conf
+```
+
+### Installation de zigbee2mqtt
+
+```bash
+# En root (su -)
+apk add zigbee2mqtt
+
+# Le binaire est installe a /usr/bin/zigbee2mqtt
+# La configuration doit etre creee dans /root/.z2m/configuration.yaml
+```
+
+### Deploiement du service
+
+```bash
+# Depuis le laptop, copier le fichier init
 scp rpi/rpi0/zigbee2mqtt.initd jerome@<IP_RPI0>:/tmp/
 
 # Sur le RPi Zero 2W
@@ -43,6 +71,8 @@ doas chmod +x /etc/init.d/zigbee2mqtt
 doas rc-update add zigbee2mqtt default
 doas rc-service zigbee2mqtt start
 ```
+
+Le `chmod +x` est obligatoire - OpenRC refuse d'executer un script non executable.
 
 ### Gestion du service
 
@@ -55,7 +85,7 @@ doas rc-service zigbee2mqtt start
 doas rc-service zigbee2mqtt stop
 doas rc-service zigbee2mqtt restart
 
-# Logs
+# Logs en temps reel
 tail -f /var/log/zigbee2mqtt/zigbee2mqtt.log
 
 # Desactiver le demarrage automatique
@@ -64,7 +94,20 @@ doas rc-update del zigbee2mqtt default
 
 ### Supervision automatique
 
-`supervisor=supervise-daemon` dans le fichier init indique a OpenRC d'utiliser son daemon de supervision integre. Il relance automatiquement le process en cas d'arret inopiné, equivalent au `Restart=on-failure` de systemd.
+`supervisor=supervise-daemon` demande a OpenRC de surveiller le process et de le relancer automatiquement en cas de crash, équivalent au `Restart=on-failure` de systemd. Par défaut, OpenRC tente 10 relances sur 10 secondes avant d'abandonner.
+
+Pour des relances illimitées, ajouter dans le script init :
+
+```sh
+respawn_delay=5   # secondes entre chaque relance
+respawn_max=0     # 0 = illimite
+```
+
+### Points d'attention
+
+- Le service doit tourner en **root** pour accéder au port série du dongle Zigbee - ne pas ajouter `command_user`
+- `ZIGBEE2MQTT_DATA` doit pointer vers `/root/.z2m` - z2m entre en mode onboarding si la config est introuvable
+- Les logs vont dans `/var/log/zigbee2mqtt/` via `supervise_daemon_args --stdout/--stderr` - les variables `output_log`/`error_log` ne sont pas supportées par `supervise-daemon` sur Alpine
 
 ---
 

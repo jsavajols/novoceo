@@ -18,19 +18,46 @@ Alpine Linux est une distribution minimaliste (~130 Mo installé) bien adaptée 
 - Privilege escalation : `doas` (pas `sudo` par defaut)
 - Pas de journald : les logs vont dans des fichiers sous `/var/log/`
 
+### Configuration de doas
+
+`doas` est l'outil de privilege escalation par défaut sur Alpine (équivalent `sudo`). Il nécessite une configuration explicite - par défaut aucun utilisateur ne peut élever ses privilèges.
+
+```bash
+# En root (su -)
+
+# Verifier que l'utilisateur est dans le groupe wheel
+id jerome
+
+# Si absent
+adduser jerome wheel
+
+# Activer la regle wheel dans /etc/doas.conf
+sed -i 's/^# permit persist :wheel/permit persist :wheel/' /etc/doas.conf
+```
+
+Le fichier `/etc/doas.conf` est lisible uniquement par root (mode 400) - c'est normal et attendu.
+
 ### Packages necessaires
 
 ```bash
-# Node.js pour Zigbee2MQTT
-doas apk add nodejs npm
+# Zigbee2MQTT (installe le binaire dans /usr/bin/zigbee2mqtt)
+doas apk add zigbee2mqtt
 
 # mosquitto-clients pour le watchdog MQTT
 doas apk add mosquitto-clients
 ```
 
+Node.js n'est pas a installer séparément - le package `zigbee2mqtt` d'Alpine embarque ses propres dépendances.
+
+### Configuration de Zigbee2MQTT
+
+Le fichier de configuration attendu par le service est `/root/.z2m/configuration.yaml`. C'est le répertoire de données par défaut du package Alpine (`ZIGBEE2MQTT_DATA=/root/.z2m`).
+
+Si ce répertoire est absent ou vide, zigbee2mqtt démarre en mode onboarding (interface web sur le port 8080) au lieu de se connecter au réseau Zigbee.
+
 ### Persistance des services
 
-Sur Alpine Linux, les services actives par `rc-update` sont persistes dans `/etc/runlevels/`. Contrairement a un systeme immuable, les modifications sont directement appliquees sur le systeme de fichiers.
+Sur Alpine Linux, les services activés par `rc-update` sont persistés dans `/etc/runlevels/`. Contrairement a un systeme immuable, les modifications sont directement appliquées sur le système de fichiers.
 
 ---
 
