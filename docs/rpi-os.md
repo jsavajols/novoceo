@@ -45,9 +45,19 @@ doas apk add zigbee2mqtt
 
 # mosquitto-clients pour le watchdog MQTT
 doas apk add mosquitto-clients
+
+# logrotate pour la rotation des logs du watchdog
+doas apk add logrotate
 ```
 
 Node.js n'est pas a installer séparément - le package `zigbee2mqtt` d'Alpine embarque ses propres dépendances.
+
+`crond` (busybox) est inclus dans Alpine par défaut mais n'est pas activé. L'activer une fois :
+
+```bash
+doas rc-update add crond default
+doas rc-service crond start
+```
 
 ### Configuration de Zigbee2MQTT
 

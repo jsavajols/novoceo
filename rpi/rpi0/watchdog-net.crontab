@@ -1,0 +1,4 @@
+# Watchdog réseau - vérifie la connectivité chaque minute
+# Installation : ajouter à /etc/crontabs/root
+# Nécessite : crond activé (rc-update add crond default)
+* * * * * /opt/novoceo/watchdog-net.sh >> /var/log/watchdog-net.log 2>&1

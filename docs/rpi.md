@@ -8,8 +8,9 @@ Deux RPi sont utilisés dans le projet :
 ## Sommaire
 
 - [Zigbee2MQTT sur RPi Zero 2W (Alpine Linux)](#zigbee2mqtt-sur-rpi-zero-2w-alpine-linux)
+- [Watchdog réseau sur RPi Zero 2W (Alpine Linux)](#watchdog-réseau-sur-rpi-zero-2w-alpine-linux)
 - [Sauvegarde de la carte SD](#sauvegarde-de-la-carte-sd)
-- [Watchdog réseau](#watchdog-réseau)
+- [Watchdog réseau sur RPi3 (openSUSE MicroOS)](#watchdog-réseau)
 
 ---
 
@@ -108,6 +109,93 @@ respawn_max=0     # 0 = illimite
 - Le service doit tourner en **root** pour accéder au port série du dongle Zigbee - ne pas ajouter `command_user`
 - `ZIGBEE2MQTT_DATA` doit pointer vers `/root/.z2m` - z2m entre en mode onboarding si la config est introuvable
 - Les logs vont dans `/var/log/zigbee2mqtt/` via `supervise_daemon_args --stdout/--stderr` - les variables `output_log`/`error_log` ne sont pas supportées par `supervise-daemon` sur Alpine
+
+---
+
+## Watchdog réseau sur RPi Zero 2W (Alpine Linux)
+
+### Principe
+
+Même logique que sur le RPi3 : vérification de la connectivité chaque minute, reboot si la perte de paquets dépasse 50%, heartbeat MQTT à chaque exécution. Sur Alpine, le timer systemd est remplacé par **crond** (busybox).
+
+### Fichiers
+
+| Fichier | Rôle |
+|---------|------|
+| `rpi/rpi0/watchdog-net.sh` | Script de vérification |
+| `rpi/rpi0/watchdog-net.crontab` | Entrée cron (remplace le timer systemd) |
+| `rpi/rpi0/watchdog-net.logrotate` | Rotation des logs |
+
+### Differences avec le RPi3
+
+| | RPi3 (openSUSE MicroOS) | RPi Zero 2W (Alpine Linux) |
+|---|---|---|
+| Planification | systemd timer | crond (busybox) |
+| Fichiers | `.service` + `.timer` | `.crontab` |
+| Shell | bash | sh (busybox ash) |
+| Logs | journald | `/var/log/watchdog-net.log` |
+
+Le script est réécrit en `sh` POSIX (pas de `[[ ]]` ni `(( ))`) car Alpine utilise busybox ash par défaut.
+
+### Installation sur le RPi Zero 2W
+
+```bash
+# Depuis le laptop
+scp rpi/rpi0/watchdog-net.sh rpi/rpi0/watchdog-net.crontab rpi/rpi0/watchdog-net.logrotate jerome@<IP_RPI0>:/tmp/
+
+# Sur le RPi Zero 2W (en root)
+mkdir -p /opt/novoceo
+cp /tmp/watchdog-net.sh /opt/novoceo/
+chown root:root /opt/novoceo/watchdog-net.sh
+chmod 700 /opt/novoceo/watchdog-net.sh
+
+# Installer l'entree cron
+cat /tmp/watchdog-net.crontab >> /etc/crontabs/root
+
+# Installer la rotation des logs
+cp /tmp/watchdog-net.logrotate /etc/logrotate.d/watchdog-net
+
+# Activer et démarrer crond si pas déjà fait
+rc-update add crond default
+rc-service crond start
+```
+
+### Vérification
+
+```bash
+# Verifier que crond tourne
+rc-service crond status
+
+# Voir le crontab root
+crontab -l
+
+# Logs en temps réel (après la première minute)
+tail -f /var/log/watchdog-net.log
+
+# Exemple de sortie normale
+# perte=0%
+
+# Exemple de reboot déclenché
+# perte=60%
+# REBOOT déclenché (perte=60% > 50%)
+```
+
+### Notifications MQTT
+
+Identiques au RPi3 :
+
+| Event | Condition | Payload |
+|-------|-----------|---------|
+| `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N}` |
+| `reboot` | Avant reboot (perte > 50%) | `{"event":"reboot","loss":N}` |
+
+- Broker : `192.168.1.128:32500`
+- Topic : `rpi/watchdog-net`
+
+```bash
+# Surveiller depuis le laptop
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
+```
 
 ---
 
