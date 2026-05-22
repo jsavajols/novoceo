@@ -10,7 +10,7 @@ THRESHOLD=50  # % d'erreurs au-delà duquel on reboot
 
 MQTT_HOST="192.168.1.128"
 MQTT_PORT="32500"
-MQTT_TOPIC="rpi/watchdog-net"
+MQTT_TOPIC="rpi0/watchdog-net"
 
 lost=$(ping -c "$COUNT" -q "$TARGET" 2>/dev/null \
     | grep -oE '[0-9]+%' | tr -d '%')

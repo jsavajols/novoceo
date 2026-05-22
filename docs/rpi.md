@@ -187,19 +187,20 @@ tail -f /var/log/watchdog-net.log
 
 ### Notifications MQTT
 
-Identiques au RPi3 :
-
 | Event | Condition | Payload |
 |-------|-----------|---------|
 | `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N}` |
 | `reboot` | Avant reboot (perte > 50%) | `{"event":"reboot","loss":N}` |
 
 - Broker : `192.168.1.128:32500`
-- Topic : `rpi/watchdog-net`
+- Topic : `rpi0/watchdog-net` (differ du RPi3 qui utilise `rpi/watchdog-net`)
+
+Le recorder est configuré pour souscrire aux deux topics.
 
 ```bash
 # Surveiller depuis le laptop
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/watchdog-net" -v
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/#" -v
 ```
 
 ---
