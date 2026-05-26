@@ -9,6 +9,7 @@ Deux RPi sont utilisés dans le projet :
 
 - [Zigbee2MQTT sur RPi Zero 2W (Alpine Linux)](#zigbee2mqtt-sur-rpi-zero-2w-alpine-linux)
 - [Watchdog réseau sur RPi Zero 2W (Alpine Linux)](#watchdog-réseau-sur-rpi-zero-2w-alpine-linux)
+- [Configuration WiFi](#configuration-wifi---changer-de-point-dacces)
 - [Sauvegarde de la carte SD](#sauvegarde-de-la-carte-sd)
 - [Watchdog réseau sur RPi3 (openSUSE MicroOS)](#watchdog-réseau)
 
@@ -125,6 +126,7 @@ Même logique que sur le RPi3 : vérification de la connectivité chaque minute,
 | `rpi/rpi0/watchdog-net.sh` | Script de vérification |
 | `rpi/rpi0/watchdog-net.crontab` | Entrée cron (remplace le timer systemd) |
 | `rpi/rpi0/watchdog-net.logrotate` | Rotation des logs |
+| `rpi/rpi0/watchdog-toggle.sh` | Suspend/reactive le watchdog |
 
 ### Differences avec le RPi3
 
@@ -185,6 +187,24 @@ tail -f /var/log/watchdog-net.log
 # REBOOT déclenché (perte=60% > 50%)
 ```
 
+### Gestion manuelle du watchdog
+
+Pour suspendre temporairement le watchdog (maintenance, changement reseau) :
+
+```bash
+# Depuis le laptop
+scp rpi/rpi0/watchdog-toggle.sh jerome@<IP_RPI0>:/tmp/
+doas cp /tmp/watchdog-toggle.sh /opt/novoceo/
+doas chmod 700 /opt/novoceo/watchdog-toggle.sh
+
+# Usage (en root)
+doas /opt/novoceo/watchdog-toggle.sh suspend   # stoppe le watchdog
+doas /opt/novoceo/watchdog-toggle.sh resume    # remet en route
+doas /opt/novoceo/watchdog-toggle.sh status    # etat actuel
+```
+
+Le script commente/decommente la ligne cron dans `/etc/crontabs/root` et redémarre crond.
+
 ### Notifications MQTT
 
 | Event | Condition | Payload |
@@ -202,6 +222,64 @@ Le recorder est configuré pour souscrire aux deux topics.
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/watchdog-net" -v
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/#" -v
 ```
+
+---
+
+## Configuration WiFi - changer de point d'acces
+
+### RPi Zero 2W (Alpine Linux)
+
+Alpine utilise `wpa_supplicant` + `udhcpc`. Le fichier de configuration est `/etc/wpa_supplicant/wpa_supplicant.conf`.
+
+```bash
+# Generer un bloc network avec psk hashe (recommande)
+wpa_passphrase "NouveauSSID" "MotDePasse"
+# Copier le bloc network{...} dans le fichier de config
+
+doas vi /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
+Format attendu :
+
+```
+network={
+    ssid="NouveauSSID"
+    #psk="MotDePasse"
+    psk=<hash_genere_par_wpa_passphrase>
+}
+```
+
+Appliquer sans reboot :
+
+```bash
+doas ifdown wlan0 && doas ifup wlan0
+# ou
+doas rc-service networking restart
+```
+
+Verifier la connexion :
+
+```bash
+ip addr show wlan0
+iwconfig wlan0
+```
+
+### RPi3 (openSUSE MicroOS avec NetworkManager)
+
+```bash
+# Voir les reseaux disponibles
+nmcli device wifi list
+
+# Se connecter a un nouveau reseau (cree et active la connexion)
+sudo nmcli device wifi connect "NouveauSSID" password "MotDePasse"
+
+# Modifier une connexion existante
+nmcli connection show                                              # lister
+sudo nmcli connection modify "NomConnexion" wifi-sec.psk "NouveauMDP"
+sudo nmcli connection up "NomConnexion"
+```
+
+NetworkManager ne necessite pas de reboot ni de `transactional-update` pour changer de reseau WiFi.
 
 ---
 
@@ -284,6 +362,7 @@ Le RPi peut perdre sa connexion réseau sans s'en apercevoir (bug Zigbee2MQTT, p
 | `rpi/watchdog-net.service` | Unité systemd (exécution du script) |
 | `rpi/watchdog-net.timer` | Unité systemd (déclenchement toutes les minutes) |
 | `rpi/watchdog-net.logrotate` | Rotation des logs (non utilisé avec systemd) |
+| `rpi/rpi3/watchdog-toggle.sh` | Suspend/reactive le watchdog |
 
 ### Architecture systemd : service + timer
 
@@ -399,6 +478,23 @@ Surveiller le témoin MQTT pendant le test :
 ```bash
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
 ```
+
+### Gestion manuelle du watchdog
+
+```bash
+# Depuis le laptop
+scp rpi/rpi3/watchdog-toggle.sh jerome@<IP_RPI3>:/tmp/
+sudo mv /tmp/watchdog-toggle.sh /opt/novoceo/
+sudo chmod 700 /opt/novoceo/watchdog-toggle.sh
+sudo chcon -t bin_t /opt/novoceo/watchdog-toggle.sh  # SELinux
+
+# Usage
+sudo /opt/novoceo/watchdog-toggle.sh suspend   # stoppe le watchdog
+sudo /opt/novoceo/watchdog-toggle.sh resume    # remet en route
+sudo /opt/novoceo/watchdog-toggle.sh status    # etat actuel
+```
+
+La suspension utilise `systemctl stop/start watchdog-net.timer` et ne survit pas a un reboot.
 
 ### Vérification et logs
 
