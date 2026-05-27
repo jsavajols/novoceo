@@ -134,6 +134,7 @@ func main() {
 	f.Get("/htmx/prise", a.htmxPrise)
 	f.Post("/htmx/toggle", a.htmxToggle)
 	f.Get("/htmx/contact", a.htmxContact)
+	f.Get("/htmx/presence", a.htmxPresence)
 
 	logf("démarré sur :%s — API: %s", port, apiURL)
 	if err := f.Listen(":" + port); err != nil {

@@ -30,6 +30,7 @@ const indexHTML = `<!DOCTYPE html>
     .card-amber  { box-shadow: 0 0 0 1px rgba(245,158,11,.1),  0 8px 32px rgba(245,158,11,.06); }
     .card-emer   { box-shadow: 0 0 0 1px rgba(52,211,153,.1),  0 8px 32px rgba(52,211,153,.06); }
     .card-violet { box-shadow: 0 0 0 1px rgba(139,92,246,.1),  0 8px 32px rgba(139,92,246,.06); }
+    .card-sky    { box-shadow: 0 0 0 1px rgba(56,189,248,.1),   0 8px 32px rgba(56,189,248,.06); }
     .glow-on    { box-shadow: 0 0 30px rgba(52,211,153,.4),  0 0 80px rgba(52,211,153,.12);  border-color: rgba(52,211,153,.35)  !important; }
     .glow-off   { box-shadow: 0 0 20px rgba(139,92,246,.25), 0 0 60px rgba(139,92,246,.08);  border-color: rgba(139,92,246,.25)  !important; }
     .glow-alert { box-shadow: 0 0 30px rgba(239,68,68,.4),   0 0 80px rgba(239,68,68,.12);   border-color: rgba(239,68,68,.35)   !important; }
@@ -79,6 +80,9 @@ const indexHTML = `<!DOCTYPE html>
     html.light .card-amber  { background-color: #fffbeb !important; box-shadow: 0 0 0 1px rgba(245,158,11,.3), 0 4px 24px rgba(245,158,11,.1); }
     html.light .card-emer   { background-color: #f0fdf4 !important; box-shadow: 0 0 0 1px rgba(52,211,153,.3), 0 4px 24px rgba(52,211,153,.1); }
     html.light .card-violet { background-color: #f5f3ff !important; box-shadow: 0 0 0 1px rgba(139,92,246,.3), 0 4px 24px rgba(139,92,246,.1); }
+    html.light .card-sky    { background-color: #f0f9ff !important; box-shadow: 0 0 0 1px rgba(56,189,248,.3),  0 4px 24px rgba(56,189,248,.1); }
+    html.light .text-sky-300 { color: #0284c7 !important; }
+    html.light .text-sky-400 { color: #0369a1 !important; }
     html.light .glow-on    { box-shadow: 0 0 20px rgba(52,211,153,.3),  0 0 50px rgba(52,211,153,.08);  border-color: rgba(52,211,153,.5)  !important; }
     html.light .glow-off   { box-shadow: 0 0 15px rgba(139,92,246,.2),  0 0 40px rgba(139,92,246,.06); border-color: rgba(139,92,246,.5)  !important; }
     html.light .glow-alert { box-shadow: 0 0 20px rgba(239,68,68,.3),   0 0 50px rgba(239,68,68,.08);  border-color: rgba(239,68,68,.5)   !important; }
@@ -119,7 +123,7 @@ const indexHTML = `<!DOCTYPE html>
     </div>
   </header>
 
-  <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+  <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 max-w-6xl mx-auto">
 
     <!-- Bridge Health — refresh 60s -->
     <div class="bg-slate-900 rounded-2xl p-5 card-cyan">
@@ -193,6 +197,27 @@ const indexHTML = `<!DOCTYPE html>
         hx-trigger="load, every 5s"
         hx-swap="innerHTML"
         hx-indicator="#contact-spinner">
+        <p class="font-mono text-xs text-slate-500">chargement...</p>
+      </div>
+    </div>
+
+
+    <!-- Présence rpi0 — refresh 5s -->
+    <div class="bg-slate-900 rounded-2xl p-5 card-sky">
+      <div class="flex items-center gap-2 mb-5">
+        <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+        </svg>
+        <span class="font-mono text-xs text-sky-400 tracking-widest uppercase">Présence</span>
+        <span id="presence-spinner" class="htmx-indicator ml-auto">
+          <span class="spin inline-block h-3 w-3 rounded-full border-2 border-slate-700 border-t-sky-400"></span>
+        </span>
+      </div>
+      <div id="presence-content"
+        hx-get="/htmx/presence"
+        hx-trigger="load, every 5s"
+        hx-swap="innerHTML"
+        hx-indicator="#presence-spinner">
         <p class="font-mono text-xs text-slate-500">chargement...</p>
       </div>
     </div>

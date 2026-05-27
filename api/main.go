@@ -265,6 +265,41 @@ func (a *application) getContactState(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+// --- GET /sensor/presence ---
+
+type presenceResponse struct {
+	Occupancy   *bool     `json:"occupancy"`
+	Illuminance *float64  `json:"illuminance"`
+	Battery     *int      `json:"battery"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+const queryPresence = `
+SELECT
+    (device_state->>'occupancy')::boolean AS occupancy,
+    (device_state->>'illuminance')::float  AS illuminance,
+    (device_state->>'battery')::int        AS battery,
+    created_at
+FROM states
+WHERE topic LIKE '%rpi0%Présence%'
+  AND topic NOT LIKE '%/set%'
+  AND device_state->>'occupancy' IS NOT NULL
+ORDER BY id DESC
+LIMIT 1`
+
+func (a *application) getPresence(c *fiber.Ctx) error {
+	var res presenceResponse
+	row := a.db.QueryRow(context.Background(), queryPresence)
+	err := row.Scan(&res.Occupancy, &res.Illuminance, &res.Battery, &res.CreatedAt)
+	if err == pgx.ErrNoRows {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "aucune donnée"})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(res)
+}
+
 // --- GET /device/:device/state ---
 
 const queryDeviceState = `
@@ -388,6 +423,7 @@ func main() {
 	f.Get("/device/:device/state", a.getDeviceState)
 	f.Get("/sensor/temperature", a.getTemperature)
 	f.Get("/sensor/temperature/history", a.getTemperatureHistory)
+	f.Get("/sensor/presence", a.getPresence)
 	f.Get("/watchdog", a.getWatchdog)
 	f.Get("/bridge/health", a.getBridgeHealth)
 
