@@ -85,6 +85,13 @@ interface ContactData {
   created_at: string;
 }
 
+interface PresenceData {
+  occupancy: boolean | null;
+  illuminance: number | null;
+  battery: number | null;
+  created_at: string;
+}
+
 // ---- Theme ----
 
 type ThemeMode = 'dark' | 'light' | 'system';
@@ -96,10 +103,12 @@ interface Palette {
   cardAmber: string;
   cardEmer: string;
   cardViolet: string;
+  cardSky: string;
   borderCyan: string;
   borderAmber: string;
   borderEmer: string;
   borderViolet: string;
+  borderSky: string;
   track: string;
   text: string;
   textMeta: string;
@@ -125,6 +134,7 @@ interface Palette {
   accentAmber: string;
   accentEmer: string;
   accentViolet: string;
+  accentSky: string;
   stateOn: string;
   stateOff: string;
   contactClosed: string;
@@ -138,10 +148,12 @@ const DARK: Palette = {
   cardAmber: '#0f172a',
   cardEmer: '#0f172a',
   cardViolet: '#0f172a',
+  cardSky: '#0f172a',
   borderCyan: 'rgba(6,182,212,0.18)',
   borderAmber: 'rgba(245,158,11,0.18)',
   borderEmer: 'rgba(52,211,153,0.18)',
   borderViolet: 'rgba(139,92,246,0.18)',
+  borderSky: 'rgba(56,189,248,0.18)',
   track: '#1e293b',
   text: '#cbd5e1',
   textMeta: '#475569',
@@ -167,6 +179,7 @@ const DARK: Palette = {
   accentAmber: '#fbbf24',
   accentEmer: '#34d399',
   accentViolet: '#a78bfa',
+  accentSky: '#38bdf8',
   stateOn: '#34d399',
   stateOff: '#a78bfa',
   contactClosed: '#c4b5fd',
@@ -180,10 +193,12 @@ const LIGHT: Palette = {
   cardAmber: '#fffcf0',
   cardEmer: '#f0fdf4',
   cardViolet: '#faf5ff',
+  cardSky: '#f0f9ff',
   borderCyan: 'rgba(6,182,212,0.3)',
   borderAmber: 'rgba(245,158,11,0.3)',
   borderEmer: 'rgba(52,211,153,0.3)',
   borderViolet: 'rgba(139,92,246,0.3)',
+  borderSky: 'rgba(56,189,248,0.3)',
   track: '#e2e8f0',
   text: '#334155',
   textMeta: '#64748b',
@@ -209,6 +224,7 @@ const LIGHT: Palette = {
   accentAmber: '#d97706',
   accentEmer: '#059669',
   accentViolet: '#7c3aed',
+  accentSky: '#0284c7',
   stateOn: '#059669',
   stateOff: '#7c3aed',
   contactClosed: '#7c3aed',
@@ -715,6 +731,70 @@ function CardContact() {
   );
 }
 
+// ---- Presence Card ----
+
+function CardPresence() {
+  const [data, setData] = useState<PresenceData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { s, colors } = useTheme();
+
+  const load = useCallback(async () => {
+    try {
+      const d = await apiFetch<PresenceData>('/sensor/presence');
+      setData(d);
+    } catch {
+      /* silently keep last state */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 5_000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  const occ = data?.occupancy ?? null;
+  const label = occ == null ? '?' : occ ? 'DÉTECTÉ' : 'VIDE';
+  const color = occ == null ? '#64748b' : occ ? colors.stateOn : colors.accentSky;
+  const dotColor = occ == null ? '#64748b' : occ ? colors.stateOn : colors.accentSky;
+  const glowStyle = occ == null ? {} : occ ? s.glowOn : s.glowOff;
+
+  return (
+    <View style={[s.card, { backgroundColor: colors.cardSky, borderColor: colors.borderSky }]}>
+      <View style={s.cardHeader}>
+        <View style={[s.dot, { backgroundColor: colors.accentSky }]} />
+        <Text style={[s.cardTitle, { color: colors.accentSky }]}>PRESENCE</Text>
+        {loading && <ActivityIndicator size="small" color={colors.accentSky} style={{ marginLeft: 'auto' }} />}
+      </View>
+      <View style={{ gap: 4 }}>
+        <View style={{ alignItems: 'center', marginVertical: 8 }}>
+          <View style={[s.circle, glowStyle]}>
+            <Text style={[s.circleText, { color, fontSize: 14 }]}>{label}</Text>
+          </View>
+          <View style={[s.circleDot, { backgroundColor: dotColor }]} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 24, marginTop: 4, justifyContent: 'center' }}>
+          {data?.illuminance != null && (
+            <View style={{ alignItems: 'center' }}>
+              <Text style={s.subLabel}>luminosité</Text>
+              <Text style={[s.barValue, { color: colors.accentSky }]}>{Math.round(data.illuminance)} lx</Text>
+            </View>
+          )}
+          {data?.battery != null && (
+            <View style={{ alignItems: 'center' }}>
+              <Text style={s.subLabel}>batterie</Text>
+              <Text style={[s.barValue, { color: colors.accentBattery }]}>{data.battery}%</Text>
+            </View>
+          )}
+        </View>
+        {data && <Text style={[s.metaText, { textAlign: 'center', marginTop: 2 }]}>{fmtTime(data.created_at)}</Text>}
+      </View>
+    </View>
+  );
+}
+
 // ---- Root ----
 
 export default function App() {
@@ -785,6 +865,7 @@ function AppInner() {
           <CardTemperature />
           <CardPrise />
           <CardContact />
+          <CardPresence />
         </View>
 
         <Text style={s.footer}>novoceo · zigbee2mqtt monitoring</Text>
