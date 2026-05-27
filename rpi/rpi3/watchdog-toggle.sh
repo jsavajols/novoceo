@@ -1,30 +1,36 @@
 #!/bin/sh
 # watchdog-toggle.sh - Suspend ou reactive le watchdog reseau (systemd timer)
+# La suspension persiste apres reboot via disable/enable du timer.
 # Usage: watchdog-toggle.sh suspend | resume | status
 # Necessite sudo/root
 
+is_enabled() {
+    systemctl is-enabled --quiet watchdog-net.timer 2>/dev/null
+}
+
 case "$1" in
   suspend)
-    if ! systemctl is-active --quiet watchdog-net.timer; then
+    if ! is_enabled; then
       echo "Watchdog deja suspendu"
       exit 0
     fi
     systemctl stop watchdog-net.timer
-    echo "Watchdog suspendu"
+    systemctl disable watchdog-net.timer
+    echo "Watchdog suspendu (persistera apres reboot)"
     ;;
   resume)
-    if systemctl is-active --quiet watchdog-net.timer; then
+    if is_enabled; then
       echo "Watchdog deja actif"
       exit 0
     fi
-    systemctl start watchdog-net.timer
+    systemctl enable --now watchdog-net.timer
     echo "Watchdog reactive"
     ;;
   status)
-    if systemctl is-active --quiet watchdog-net.timer; then
+    if is_enabled; then
       echo "Watchdog: actif"
     else
-      echo "Watchdog: suspendu"
+      echo "Watchdog: suspendu (persistera apres reboot)"
     fi
     systemctl status watchdog-net.timer --no-pager -l
     ;;

@@ -18,7 +18,7 @@ case "$1" in
     fi
     sed -i "s|^\(.* ${PATTERN}\)|#\1|" "${CRONTAB}"
     rc-service crond restart
-    echo "Watchdog suspendu"
+    echo "Watchdog suspendu (persistera apres reboot)"
     ;;
   resume)
     if ! grep -q "^#.*${PATTERN}" "${CRONTAB}"; then
@@ -38,7 +38,7 @@ case "$1" in
     if grep -q "^[^#].*${PATTERN}" "${CRONTAB}"; then
       echo "Watchdog: actif"
     else
-      echo "Watchdog: suspendu"
+      echo "Watchdog: suspendu (persistera apres reboot)"
     fi
     rc-service crond status
     ;;
