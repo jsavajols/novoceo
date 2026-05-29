@@ -11,7 +11,7 @@ Deux RPi sont utilisés dans le projet :
 - [Watchdog réseau sur RPi Zero 2W (Alpine Linux)](#watchdog-réseau-sur-rpi-zero-2w-alpine-linux)
 - [Configuration WiFi](#configuration-wifi---changer-de-point-dacces)
 - [Sauvegarde de la carte SD](#sauvegarde-de-la-carte-sd)
-- [Watchdog réseau sur RPi3 (openSUSE MicroOS)](#watchdog-réseau)
+- [Watchdog réseau et Z2M sur RPi3 (openSUSE MicroOS)](#watchdog-réseau-et-z2m-sur-rpi3-opensuse-micros)
 
 ---
 
@@ -379,20 +379,35 @@ pv <fichier.img.gz> | gunzip -c | dd of=/dev/sdb bs=4M
 
 ---
 
-## Watchdog réseau
+## Watchdog réseau et Z2M sur RPi3 (openSUSE MicroOS)
 
 ### Principe
 
-Le RPi peut perdre sa connexion réseau sans s'en apercevoir (bug Zigbee2MQTT, pile IP gelée, etc.). Un watchdog vérifie la connectivité chaque minute et force un reboot si la perte de paquets dépasse 50%.
+Vérification de la connectivité réseau et de l'état de Zigbee2MQTT toutes les minutes via systemd timer. Le script reboot si la perte de paquets dépasse 50%, et surveille Z2M en le relançant via `systemctl` avant de rebooter en dernier recours.
+
+### Supervision Zigbee2MQTT
+
+Trois niveaux complémentaires, identiques au RPi0 mais adaptés à systemd :
+
+**Niveau 1 - Watchdog interne Z2M** (`Z2M_WATCHDOG=1,1,2,5,10`)
+Configuré dans `rpi/rpi3/zigbee2mqtt.service`. Z2M redémarre son contrôleur Zigbee en mémoire selon ces délais (minutes) avant de quitter. Visible dans journald : `Starting Zigbee2MQTT with watchdog (60000,60000,120000,300000,600000)`.
+
+**Niveau 2 - systemd** (`Restart=on-failure`)
+systemd relance le process Z2M si celui-ci quitte avec une erreur.
+
+**Niveau 3 - watchdog-net.sh** (timer, toutes les minutes)
+Vérifie `systemctl is-active zigbee2mqtt`. Si Z2M est down : jusqu'à 3 `systemctl restart` (compteur dans `/run/`, remis à zéro au boot), puis `reboot -f` système.
+
+> **Note** : `Type=notify` + `WatchdogSec` (watchdog natif systemd) a été testé mais ne fonctionne pas : le module natif `unix-dgram` nécessaire pour `sd_notify` n'est pas compilé pour Node.js 24 sur ARM64. Le service reste en `Type=simple`.
 
 ### Fichiers
 
 | Fichier | Rôle |
 |---------|------|
-| `rpi/watchdog-net.sh` | Script de vérification |
-| `rpi/watchdog-net.service` | Unité systemd (exécution du script) |
-| `rpi/watchdog-net.timer` | Unité systemd (déclenchement toutes les minutes) |
-| `rpi/watchdog-net.logrotate` | Rotation des logs (non utilisé avec systemd) |
+| `rpi/rpi3/watchdog-net.sh` | Script de vérification réseau et Z2M |
+| `rpi/rpi3/watchdog-net.service` | Unité systemd (exécution du script) |
+| `rpi/rpi3/watchdog-net.timer` | Unité systemd (déclenchement toutes les minutes) |
+| `rpi/rpi3/watchdog-net.logrotate` | Rotation des logs (non utilisé avec systemd) |
 | `rpi/rpi3/watchdog-toggle.sh` | Suspend/reactive le watchdog |
 
 ### Architecture systemd : service + timer
@@ -473,23 +488,32 @@ A retenir : toujours relabeler les fichiers copiés depuis `/tmp/` vers `/opt/` 
 
 ### Notifications MQTT
 
-A chaque exécution, le script publie un heartbeat sur le broker MQTT central :
+**Topic `rpi/watchdog-net`** - connectivité réseau :
 
 | Event | Condition | Payload |
 |-------|-----------|---------|
-| `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N}` |
-| `reboot` | Avant reboot (perte > 50%) | `{"event":"reboot","loss":N}` |
+| `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N,"ticks":N}` |
+| `reboot` | Avant reboot réseau (perte > 50%, ticks >= 10) | `{"event":"reboot","loss":N,"ticks":N}` |
+
+**Topic `rpi/watchdog-z2m`** - état Zigbee2MQTT :
+
+| Event | Condition | Payload |
+|-------|-----------|---------|
+| `heartbeat` | Toutes les minutes si Z2M est ok | `{"event":"heartbeat","status":"ok","restarts":N}` |
+| `restart` | Tentative de relance Z2M | `{"event":"restart","attempt":N,"max":3}` |
+| `reboot` | Reboot après 3 échecs Z2M | `{"event":"reboot","reason":"z2m_unrecoverable","restarts":3}` |
 
 - Broker : `192.168.1.128:32500`
-- Topic : `rpi/watchdog-net`
 - QoS : 0 (best-effort, le `|| true` garantit que le script ne bloque pas si le broker est injoignable)
+- `ticks` : compteur de passages depuis le boot (tmpfs `/run/`, remis à zéro au reboot) - le reboot réseau ne se déclenche qu'à partir de ticks=10
 
 Le recorder souscrit à `rpi/#` et persiste ces messages dans PostgreSQL comme les états Zigbee.
 
-Pour surveiller en temps réel depuis le laptop :
-
 ```bash
+# Surveiller depuis le laptop
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-z2m" -v
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/#" -v
 ```
 
 ### Test du watchdog
@@ -540,9 +564,22 @@ sudo journalctl -u watchdog-net.service -f
 sudo journalctl -u watchdog-net.service --since today
 
 # Exemple de log normal :
-# May 20 09:58:01 novoceo-os watchdog-net.sh[1234]: perte=0%
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: perte=0% ticks=5
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: z2m=ok
 
-# Exemple de reboot déclenché :
-# May 20 09:58:01 novoceo-os watchdog-net.sh[1234]: perte=60%
-# May 20 09:58:01 novoceo-os watchdog-net.sh[1234]: REBOOT déclenché (perte=60% > 50%)
+# Exemple reboot différé (protection au boot, ticks < 10) :
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: perte=80% ticks=3
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: Perte élevée mais reboot différé (ticks=3 < 10)
+
+# Exemple de reboot réseau déclenché :
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: perte=60% ticks=12
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: REBOOT déclenché (perte=60% > 50%, ticks=12)
+
+# Exemple Z2M down avec restart automatique :
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: z2m=down
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: Redémarrage z2m (tentative 1/3)
+
+# Exemple reboot suite à Z2M irrécupérable :
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: z2m=down
+# May 29 09:58:01 novoceo-os watchdog-net.sh[1234]: z2m non récupéré après 3 tentatives - reboot système
 ```
