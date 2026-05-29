@@ -157,7 +157,7 @@ Dernier état de santé du bridge Zigbee2MQTT (charge CPU, mémoire).
 
 | Variable | Défaut | Description |
 |----------|--------|-------------|
-| `MQTT_BROKER` | `tcp://100.64.0.10:1883` | URL du broker MQTT |
+| `MQTT_BROKER` | `tcp://192.168.1.128:1883` | URL du broker MQTT |
 | `API_PORT` | `5000` | Port d'écoute |
 | `API_TOKEN` | — | Bearer token (requis, sinon arrêt) |
 | `DB_HOST` | `localhost` | Hôte PostgreSQL |

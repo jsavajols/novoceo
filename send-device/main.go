@@ -20,7 +20,7 @@ func log(format string, args ...any) {
 
 func main() {
 	// broker  := flag.String("broker",  "tcp://localhost:1883", "URL du broker MQTT")
-	broker := flag.String("broker", "tcp://100.64.0.10:32500", "URL du broker MQTT")
+	broker := flag.String("broker", "tcp://192.168.1.128:32500", "URL du broker MQTT")
 	device := flag.String("device", "", "Friendly name de l'appareil cible (requis)")
 	rpi := flag.String("rpi", "", "Hostname RPi pour topologie multi-RPi (vide = local)")
 	state := flag.String("state", "TOGGLE", "État à envoyer : ON, OFF, TOGGLE")
