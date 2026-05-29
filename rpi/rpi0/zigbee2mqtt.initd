@@ -5,6 +5,10 @@ description="Zigbee2MQTT"
 
 command="/usr/bin/zigbee2mqtt"
 export ZIGBEE2MQTT_DATA="/root/.z2m"
+# Watchdog interne Z2M : 5 tentatives avec délais croissants (minutes)
+# Z2M redémarre son contrôleur Zigbee avant d'abandonner et de quitter
+# supervise-daemon prend le relais si Z2M quitte
+export Z2M_WATCHDOG="1,1,2,5,10"
 
 supervise_daemon_args="--stdout /var/log/zigbee2mqtt/zigbee2mqtt.log --stderr /var/log/zigbee2mqtt/zigbee2mqtt.log"
 
