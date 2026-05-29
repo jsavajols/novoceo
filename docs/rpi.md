@@ -63,7 +63,7 @@ apk add zigbee2mqtt
 
 ```bash
 # Depuis le laptop, copier le fichier init
-scp rpi/rpi0/zigbee2mqtt.initd jerome@<IP_RPI0>:/tmp/
+scp rpi/rpi0/zigbee2mqtt.initd jerome@100.64.0.11:/tmp/
 
 # Sur le RPi Zero 2W
 doas cp /tmp/zigbee2mqtt.initd /etc/init.d/zigbee2mqtt
@@ -150,7 +150,7 @@ Le script est réécrit en `sh` POSIX (pas de `[[ ]]` ni `(( ))`) car Alpine uti
 
 ```bash
 # Depuis le laptop
-scp rpi/rpi0/watchdog-net.sh rpi/rpi0/watchdog-net.crontab rpi/rpi0/watchdog-net.logrotate jerome@<IP_RPI0>:/tmp/
+scp rpi/rpi0/watchdog-net.sh rpi/rpi0/watchdog-net.crontab rpi/rpi0/watchdog-net.logrotate jerome@100.64.0.11:/tmp/
 
 # Sur le RPi Zero 2W (en root)
 mkdir -p /opt/novoceo
@@ -213,7 +213,7 @@ Pour suspendre temporairement le watchdog (maintenance, changement reseau) :
 
 ```bash
 # Depuis le laptop
-scp rpi/rpi0/watchdog-toggle.sh jerome@<IP_RPI0>:/tmp/
+scp rpi/rpi0/watchdog-toggle.sh jerome@100.64.0.11:/tmp/
 doas cp /tmp/watchdog-toggle.sh /opt/novoceo/
 doas chmod 700 /opt/novoceo/watchdog-toggle.sh
 
@@ -449,7 +449,7 @@ chmod 700 /opt/novoceo/watchdog-net.sh
 
 ```bash
 # Depuis le laptop, copier les fichiers
-scp rpi/watchdog-net.sh rpi/watchdog-net.service rpi/watchdog-net.timer pi@<IP_RPI>:/tmp/
+scp rpi/watchdog-net.sh rpi/watchdog-net.service rpi/watchdog-net.timer jerome@100.64.0.8:/tmp/
 
 # Sur le RPi
 sudo mkdir -p /opt/novoceo
@@ -538,7 +538,7 @@ mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
 
 ```bash
 # Depuis le laptop
-scp rpi/rpi3/watchdog-toggle.sh jerome@<IP_RPI3>:/tmp/
+scp rpi/rpi3/watchdog-toggle.sh jerome@100.64.0.8:/tmp/
 sudo mv /tmp/watchdog-toggle.sh /opt/novoceo/
 sudo chmod 700 /opt/novoceo/watchdog-toggle.sh
 sudo chcon -t bin_t /opt/novoceo/watchdog-toggle.sh  # SELinux
