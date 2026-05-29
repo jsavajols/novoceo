@@ -215,7 +215,7 @@ const indexHTML = `<!DOCTYPE html>
       </div>
       <div id="presence-content"
         hx-get="/htmx/presence"
-        hx-trigger="load, every 5s"
+        hx-trigger="load, every 2s"
         hx-swap="innerHTML"
         hx-indicator="#presence-spinner">
         <p class="font-mono text-xs text-slate-500">chargement...</p>

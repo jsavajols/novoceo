@@ -242,16 +242,16 @@ Le script commente/decommente la ligne cron dans `/etc/crontabs/root` et redéma
 | `restart` | Tentative de relance Z2M | `{"event":"restart","attempt":N,"max":3}` |
 | `reboot` | Reboot après 3 échecs Z2M | `{"event":"reboot","reason":"z2m_unrecoverable","restarts":3}` |
 
-- Broker : `192.168.1.128:32500`
+- Broker : `100.64.0.10:32500`
 - Topic réseau : `rpi0/watchdog-net` (differe du RPi3 qui utilise `rpi/watchdog-net`)
 - Topic Z2M : `rpi0/watchdog-z2m`
 - `ticks` : compteur de passages depuis le boot (tmpfs `/run/`, remis à zéro au reboot) - le reboot réseau ne se déclenche qu'à partir de ticks=10 pour éviter les faux positifs au démarrage
 
 ```bash
 # Surveiller depuis le laptop
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/watchdog-net" -v
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/watchdog-z2m" -v
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/#" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi0/watchdog-net" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi0/watchdog-z2m" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi0/#" -v
 ```
 
 ---
@@ -503,7 +503,7 @@ A retenir : toujours relabeler les fichiers copiés depuis `/tmp/` vers `/opt/` 
 | `restart` | Tentative de relance Z2M | `{"event":"restart","attempt":N,"max":3}` |
 | `reboot` | Reboot après 3 échecs Z2M | `{"event":"reboot","reason":"z2m_unrecoverable","restarts":3}` |
 
-- Broker : `192.168.1.128:32500`
+- Broker : `100.64.0.10:32500`
 - QoS : 0 (best-effort, le `|| true` garantit que le script ne bloque pas si le broker est injoignable)
 - `ticks` : compteur de passages depuis le boot (tmpfs `/run/`, remis à zéro au reboot) - le reboot réseau ne se déclenche qu'à partir de ticks=10
 
@@ -511,9 +511,9 @@ Le recorder souscrit à `rpi/#` et persiste ces messages dans PostgreSQL comme l
 
 ```bash
 # Surveiller depuis le laptop
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-z2m" -v
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/#" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi/watchdog-net" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi/watchdog-z2m" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi/#" -v
 ```
 
 ### Test du watchdog
@@ -531,7 +531,7 @@ sudo ip route del blackhole 8.8.8.8/32
 Surveiller le témoin MQTT pendant le test :
 
 ```bash
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi/watchdog-net" -v
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "rpi/watchdog-net" -v
 ```
 
 ### Gestion manuelle du watchdog

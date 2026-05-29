@@ -23,9 +23,9 @@ func (a *app) htmxPresence(c *fiber.Ctx) error {
 	case d.Occupancy == nil:
 		label, glowClass, textColor, dotColor = "?", "", "text-slate-500", "bg-slate-600"
 	case *d.Occupancy:
-		label, glowClass, textColor, dotColor = "DÉTECTÉ", "glow-on", "text-green-300", "bg-green-400"
+		label, glowClass, textColor, dotColor = "PRESENCE", "glow-on", "text-green-300", "bg-green-400"
 	default:
-		label, glowClass, textColor, dotColor = "VIDE", "glow-off", "text-sky-300", "bg-sky-400"
+		label, glowClass, textColor, dotColor = "PERSONNE", "glow-off", "text-sky-300", "bg-sky-400"
 	}
 
 	lux := ""

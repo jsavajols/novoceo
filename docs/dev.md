@@ -36,7 +36,7 @@ nix-shell   # charge l'environnement complet
 Copier et adapter pour le dev local :
 
 ```env
-MQTT_BROKER=tcp://192.168.1.128:32500
+MQTT_BROKER=tcp://100.64.0.10:32500
 API_TOKEN=<token>
 DB_HOST=51.159.109.144
 DB_PORT=30015
@@ -74,13 +74,13 @@ Affiche en temps réel les devices Zigbee et leurs valeurs (lecture seule).
 
 ```bash
 # Avec le broker k3s
-go run ./monitor/ tcp://192.168.1.128:32500
+go run ./monitor/ tcp://100.64.0.10:32500
 
 # Avec un broker local
 go run ./monitor/ tcp://localhost:1883
 
 # Binaire compilé
-go build -o monitor/monitor ./monitor/ && ./monitor/monitor tcp://192.168.1.128:32500
+go build -o monitor/monitor ./monitor/ && ./monitor/monitor tcp://100.64.0.10:32500
 ```
 
 ## snug — lier un bouton à une prise
@@ -93,7 +93,7 @@ go build -o snug/snug ./snug/
 
 # Tous les flags
 ./snug/snug \
-  -broker tcp://192.168.1.128:32500 \
+  -broker tcp://100.64.0.10:32500 \
   -button Bouton \
   -plug Prise \
   -action single \

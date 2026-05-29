@@ -12,7 +12,7 @@ graph LR
         Z2M --- TEMP["🌡 Température"]
     end
 
-    subgraph k3s["k3s — 192.168.1.128"]
+    subgraph k3s["k3s — 100.64.0.10"]
         MOSQ["mosquitto\n:32500"]
         SNUG["snug"]
         REC["recorder"]

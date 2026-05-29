@@ -388,7 +388,7 @@ func main() {
 	_ = godotenv.Load()
 
 	ctx := context.Background()
-	broker := env("MQTT_BROKER", "tcp://192.168.1.128:1883")
+	broker := env("MQTT_BROKER", "tcp://100.64.0.10:1883")
 	port := env("API_PORT", "5000")
 	token := env("API_TOKEN", "")
 	if token == "" {

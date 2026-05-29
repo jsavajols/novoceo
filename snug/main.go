@@ -22,7 +22,7 @@ func log(format string, args ...any) {
 
 func main() {
 	// broker := flag.String("broker", "tcp://localhost:1883", "URL du broker MQTT")
-	broker := flag.String("broker", "tcp://192.168.1.128:32500", "URL du broker MQTT")
+	broker := flag.String("broker", "tcp://100.64.0.10:32500", "URL du broker MQTT")
 	button := flag.String("button", "Bouton", "Friendly name du bouton")
 	plug := flag.String("plug", "", "Friendly name de la prise (requis)")
 	action := flag.String("action", "", "Action bouton à filtrer (vide = toutes)")

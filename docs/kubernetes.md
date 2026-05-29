@@ -1,6 +1,6 @@
 # Déploiement Kubernetes (k3s)
 
-Cluster k3s sur `192.168.1.128`, namespace `novoceo`.
+Cluster k3s sur `100.64.0.10`, namespace `novoceo`.
 
 ## Structure des manifests
 
@@ -120,8 +120,8 @@ kubectl logs -n novoceo -l app=front -f
 kubectl logs -n novoceo -l app=snug -f
 
 # Tester le broker depuis le réseau local
-mosquitto_pub -h 192.168.1.128 -p 32500 -t test -m "hello"
-mosquitto_sub -h 192.168.1.128 -p 32500 -t "#"
+mosquitto_pub -h 100.64.0.10 -p 32500 -t test -m "hello"
+mosquitto_sub -h 100.64.0.10 -p 32500 -t "#"
 
 # Supprimer tout
 kubectl delete namespace novoceo

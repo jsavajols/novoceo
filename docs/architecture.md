@@ -23,7 +23,7 @@ graph TB
         Z2M    -- "Zigbee RF" --> PRISE
     end
 
-    subgraph k3s["k3s cluster — 192.168.1.128  |  namespace novoceo"]
+    subgraph k3s["k3s cluster — 100.64.0.10  |  namespace novoceo"]
         direction TB
 
         MOSQ["🦟 mosquitto\nNodePort :32500"]
@@ -138,7 +138,7 @@ Le RPi `novoceo-os` doit avoir dans `configuration.yaml` de zigbee2mqtt :
 
 ```yaml
 mqtt:
-  server: mqtt://192.168.1.128:32500   # broker central sur k3s
+  server: mqtt://100.64.0.10:32500   # broker central sur k3s
   base_topic: zigbee2mqtt/novoceo-os   # préfixe = hostname du RPi
 ```
 

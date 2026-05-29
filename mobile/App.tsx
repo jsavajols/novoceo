@@ -364,7 +364,7 @@ interface ThemeCtx {
 
 const ThemeContext = createContext<ThemeCtx>({
   mode: 'system',
-  setMode: () => {},
+  setMode: () => { },
   colors: DARK,
   dark: true,
   s: makeStyles(DARK),
@@ -756,7 +756,7 @@ function CardPresence() {
   }, [load]);
 
   const occ = data?.occupancy ?? null;
-  const label = occ == null ? '?' : occ ? 'DÉTECTÉ' : 'VIDE';
+  const label = occ == null ? '?' : occ ? 'PRESENCE' : 'PERSONNE';
   const color = occ == null ? '#64748b' : occ ? colors.stateOn : colors.accentSky;
   const dotColor = occ == null ? '#64748b' : occ ? colors.stateOn : colors.accentSky;
   const glowStyle = occ == null ? {} : occ ? s.glowOn : s.glowOff;

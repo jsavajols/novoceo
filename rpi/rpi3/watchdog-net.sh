@@ -7,7 +7,7 @@ COUNT=10
 THRESHOLD=50       # % d'erreurs au-delà duquel on reboot
 REBOOT_MIN_TICKS=10  # passages minimum depuis le boot avant d'autoriser un reboot
 
-MQTT_HOST="192.168.1.128"
+MQTT_HOST="100.64.0.10"
 MQTT_PORT="32500"
 MQTT_TOPIC="rpi/watchdog-net"
 MQTT_TOPIC_Z2M="rpi/watchdog-z2m"
