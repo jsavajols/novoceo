@@ -4,13 +4,17 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
+Type=notify
 User=jerome
 Environment=ZIGBEE2MQTT_DATA=/var/lib/zigbee2mqtt
+# Watchdog interne Z2M : 5 tentatives avec délais croissants (minutes)
+Environment=Z2M_WATCHDOG=1,1,2,5,10
 ExecStart=/usr/bin/node /opt/zigbee2mqtt/index.js
 WorkingDirectory=/opt/zigbee2mqtt
 Restart=on-failure
 RestartSec=5s
+# Watchdog systemd : Z2M doit envoyer sd_notify(WATCHDOG=1) toutes les 10s
+WatchdogSec=10s
 StandardOutput=journal
 StandardError=journal
 
