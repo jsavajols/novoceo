@@ -96,14 +96,21 @@ doas rc-update del zigbee2mqtt default
 
 ### Supervision automatique
 
-`supervisor=supervise-daemon` demande a OpenRC de surveiller le process et de le relancer automatiquement en cas de crash, équivalent au `Restart=on-failure` de systemd. Par défaut, OpenRC tente 10 relances sur 10 secondes avant d'abandonner.
+La surveillance de Z2M fonctionne sur trois niveaux indépendants et complémentaires :
 
-Pour des relances illimitées, ajouter dans le script init :
+**Niveau 1 - Watchdog interne Z2M** (`Z2M_WATCHDOG`)
 
-```sh
-respawn_delay=5   # secondes entre chaque relance
-respawn_max=0     # 0 = illimite
-```
+Configuré dans `zigbee2mqtt.initd` via la variable `Z2M_WATCHDOG="1,1,2,5,10"`. Quand Z2M détecte lui-même une défaillance de son contrôleur Zigbee (dongle qui décroche, etc.), il redémarre le contrôleur en mémoire selon ces délais (en minutes). Le nombre de valeurs = nombre max de tentatives. Passé ce seuil, Z2M quitte proprement pour laisser le niveau suivant prendre la main.
+
+**Niveau 2 - supervise-daemon** (OpenRC)
+
+`supervisor=supervise-daemon` dans le script init demande a OpenRC de surveiller le process et de le relancer automatiquement si Z2M quitte, équivalent au `Restart=on-failure` de systemd. Prend le relais quand Z2M a épuisé ses retries internes.
+
+**Niveau 3 - watchdog-net.sh** (cron, toutes les minutes)
+
+Vérifie `rc-service zigbee2mqtt status` à chaque passage. Si Z2M est down malgré les deux niveaux précédents : jusqu'à 3 tentatives de `rc-service restart` (compteur persisté dans `/run/`, remis à zéro au boot). Si Z2M reste irrécupérable : `reboot -f` système.
+
+Tous les événements sont publiés sur `rpi0/watchdog-z2m` en MQTT (voir section watchdog réseau).
 
 ### Points d'attention
 
@@ -113,11 +120,11 @@ respawn_max=0     # 0 = illimite
 
 ---
 
-## Watchdog réseau sur RPi Zero 2W (Alpine Linux)
+## Watchdog réseau et Z2M sur RPi Zero 2W (Alpine Linux)
 
 ### Principe
 
-Même logique que sur le RPi3 : vérification de la connectivité chaque minute, reboot si la perte de paquets dépasse 50%, heartbeat MQTT à chaque exécution. Sur Alpine, le timer systemd est remplacé par **crond** (busybox).
+Vérification de la connectivité réseau et de l'état de Zigbee2MQTT toutes les minutes. Le script reboot si la perte de paquets dépasse 50%, et surveille Z2M en relayant automatiquement le service avant de rebooter en dernier recours. Sur Alpine, le timer systemd est remplacé par **crond** (busybox).
 
 ### Fichiers
 
@@ -180,11 +187,24 @@ crontab -l
 tail -f /var/log/watchdog-net.log
 
 # Exemple de sortie normale
-# perte=0%
+# perte=0% ticks=5
+# z2m=ok
 
-# Exemple de reboot déclenché
-# perte=60%
-# REBOOT déclenché (perte=60% > 50%)
+# Exemple reboot différé (ticks < 10, protection au boot)
+# perte=80% ticks=3
+# Perte élevée mais reboot différé (ticks=3 < 10)
+
+# Exemple de reboot réseau déclenché
+# perte=60% ticks=12
+# REBOOT déclenché (perte=60% > 50%, ticks=12)
+
+# Exemple Z2M down avec restart automatique
+# z2m=down
+# Redémarrage z2m (tentative 1/3)
+
+# Exemple reboot suite à Z2M irrécupérable
+# z2m=down
+# z2m non récupéré après 3 tentatives - reboot système
 ```
 
 ### Gestion manuelle du watchdog
@@ -207,19 +227,30 @@ Le script commente/decommente la ligne cron dans `/etc/crontabs/root` et redéma
 
 ### Notifications MQTT
 
+**Topic `rpi0/watchdog-net`** - connectivité réseau :
+
 | Event | Condition | Payload |
 |-------|-----------|---------|
-| `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N}` |
-| `reboot` | Avant reboot (perte > 50%) | `{"event":"reboot","loss":N}` |
+| `heartbeat` | Toutes les minutes | `{"event":"heartbeat","loss":N,"ticks":N}` |
+| `reboot` | Avant reboot réseau (perte > 50%, ticks >= 10) | `{"event":"reboot","loss":N,"ticks":N}` |
+
+**Topic `rpi0/watchdog-z2m`** - état Zigbee2MQTT :
+
+| Event | Condition | Payload |
+|-------|-----------|---------|
+| `heartbeat` | Toutes les minutes si Z2M est ok | `{"event":"heartbeat","status":"ok","restarts":N}` |
+| `restart` | Tentative de relance Z2M | `{"event":"restart","attempt":N,"max":3}` |
+| `reboot` | Reboot après 3 échecs Z2M | `{"event":"reboot","reason":"z2m_unrecoverable","restarts":3}` |
 
 - Broker : `192.168.1.128:32500`
-- Topic : `rpi0/watchdog-net` (differ du RPi3 qui utilise `rpi/watchdog-net`)
-
-Le recorder est configuré pour souscrire aux deux topics.
+- Topic réseau : `rpi0/watchdog-net` (differe du RPi3 qui utilise `rpi/watchdog-net`)
+- Topic Z2M : `rpi0/watchdog-z2m`
+- `ticks` : compteur de passages depuis le boot (tmpfs `/run/`, remis à zéro au reboot) - le reboot réseau ne se déclenche qu'à partir de ticks=10 pour éviter les faux positifs au démarrage
 
 ```bash
 # Surveiller depuis le laptop
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/watchdog-net" -v
+mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/watchdog-z2m" -v
 mosquitto_sub -h 192.168.1.128 -p 32500 -t "rpi0/#" -v
 ```
 
